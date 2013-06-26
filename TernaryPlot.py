@@ -85,7 +85,11 @@ class TernaryAxis():
             self.plots['label'] = [self.text(xy[0],xy[1], text, ha='center', va='center', rotation=self.label_rotation, **kw)]
         else:
             self.plots['label'] = [self.text(xy[0],xy[1], text, ha='center', va='top', **kw)]
-   
+    
+    def get_label(self):
+        '''Gets the label.'''
+        return self.plots['label'][0].get_text() if self.plots['label'] else ''        
+        
     def set_ticks(self, ticks=10, llen_ticks=0.01, lw_ticks=1.2):
         '''Sets ticks. 
         ticks: list or integer
@@ -156,7 +160,7 @@ class TernaryAxis():
             self.phi_tick = 2*np.pi/3 if self.inverseOn else np.pi/3
                     
     def inverse(self):
-        '''Inverse de axis.'''
+        '''Inverse the axis.'''
         self.__inverse()
         self.update()
     
@@ -166,7 +170,6 @@ class TernaryAxis():
         self.__plot_ticks()
         self.__inverse()
                 
-        
     def update(self):
         '''Updates the graph.'''
         self.remove('ticks')
@@ -177,7 +180,7 @@ class TernaryAxis():
         if self.gridOn: self.grid(True)        
    
     def __rect(self, r, phi):
-        'From polar coordinates to rectangle coordinates.'''
+        '''From polar coordinates to rectangle coordinates.'''
         return (r*np.cos(phi), r*np.sin(phi))
     
     def __plot_ticks(self):
@@ -327,8 +330,12 @@ class TernaryPlot():
     
     def inverse(self):
         '''Inverses the axes.'''
-        for ax in self.axes:
+        A,B,C = tuple(self.get_main_labels())
+        new_labels = [B,C,A] if self.inverseOn else [C,A,B]
+        self.inverseOn = not self.inverseOn
+        for ax,t in zip(self.axes, new_labels):
             ax.inverse()
+            ax.set_label(t)
             
     def template(self, data, kind='linear', **kw):
         '''Plots the template using linear or cubic interpolation.''' 
@@ -349,6 +356,10 @@ class TernaryPlot():
                 x_ = np.linspace(min(x), max(x), 50)
                 template = self.ax.plot(x_, f(x_), **kw)
         self.plots['templates'].append(template)
+        
+    def get_main_labels(self):
+        '''Gets main labels.'''
+        return [ax.get_label() for ax in self.axes]
         
     def min_max(self, toggle=None):
         '''Toggles between showing the minimum and maximum values or not.'''
@@ -398,10 +409,9 @@ if __name__=='__main__':
     fig = plt.figure()       
     TP = TernaryPlot(fig, 'Ternary Plot', ['Big A', 'Big B', 'Big C'], ['A','B','C'])
     data = [ [10,20,70], [20,25,55], [0.5,0.2,0.3]]
-    TP.inverse()
     TP.plot_data(data, color='green')
-    for i in range(20):
-        TP.plot_data([[60,10,30],[25,5,70]])
-    TP.template(data+[[40,50,10]],'fill', hatch='/', fill=True, edgecolor='k', color='c')
-    TP.legend(['Walt Brows Doggle', 'Boltz']*10)
+    TP.plot_data([[60,10,30],[25,5,70]])
+    TP.template(data+[[40,50,10]],'fill', hatch='/', fill=False, edgecolor='k', color='c')
+    TP.legend(['Sample 1', 'Sample 2'])
+    #TP.inverse()
     TP.show()
