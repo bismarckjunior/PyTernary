@@ -5,6 +5,7 @@
 """
 from __future__ import division
 from scipy import interpolate
+from PyQt4.QtGui import QColor
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import numpy as np
@@ -210,25 +211,25 @@ class TernaryAxis():
         tan1 = np.tan(0)
         tan2 = np.tan(np.pi/3)
         tan3 = np.tan(2*np.pi/3)
-        
+
         #Intersection with bottom line
-        x1 = (y-tan*x)/(tan1-tan) if tan1!=tan else 2
+        x1 = (y-tan*x)/(tan1-tan) if tan1 != tan else 2
         y1 = 0
-       
+
         #Intersection with left line
-        x2 = (y-tan*x)/(tan2-tan) if tan2!=tan else 2
+        x2 = (y-tan*x)/(tan2-tan) if tan2 != tan else 2
         y2 = x2*tan2
-        
+
         #Intersection with right line
-        x3 = (-y+tan*x-tan3)/(tan-tan3)  if tan3!=tan else 2
+        x3 = (-y+tan*x-tan3)/(tan-tan3)  if tan3 != tan else 2
         y3 = (x3-1)*tan3
-        
+
         for a,b in [(x1,y1),(x2,y2),(x3,y3)]:
             if not (abs(a-x)<1E-3 and abs(b-y)<1E-3 ) and 0<=a<=1 and 0<=b<=1:
-                return (a,b)                
-        return (a,b)
-    
-        
+                return (a, b)                
+        return (a, b)
+
+
 class PyTernary():
     def __init__(self, fig, title='', main_labels=[], short_labels=[],
                  canvas=plt):
@@ -245,27 +246,112 @@ class PyTernary():
         self.inverseOn = False
         self.min_maxOn = True
         self.gridOn = True
-        self.plots = {'plots': [], 'templates': [], 'short_labels': []}
+        self.plots = []
+        self.properties = []
+        self.short_labels_plot = []
+        self.legends_labels = []
+        self.legends_visible = []
+        self.__set_colors()
 
         #Setting and ploting title and labels
         self.title = title
         self.main_labels = main_labels
         self.short_labels = short_labels
-        if title: self.set_title(title, fontsize=21)
-        if main_labels: self.set_main_labels(main_labels, fontsize=13)
-        if short_labels: 
+        if title:
+            self.set_title(title, fontsize=21)
+        if main_labels:
+            self.set_main_labels(main_labels, fontsize=13)
+        if short_labels:
             self.set_short_labels(short_labels, d=0.98, fontsize=16)
-            self.show_min_max(False)     
+            self.show_min_max(False)
+
+    def __set_colors(self):
+        '''Sets colors to plot.'''
+        self.colors = ['#000000', '#ff0000', '#00ff00', '#0000ff', '#ffff00',
+                       '#ff00ff', '#00ffff', '#ff8800', '#ff0088', '#ff8888',
+                       '#88ff00', '#8800ff', '#8888ff', '#88ff88', '#00ff88',
+                       '#0088ff', '#880000', '#008800', '#000088', '#888888']
+        self.colors += [str(s) for s in QColor.colorNames()]
+
+    def __generate_properties(self, **kw):
+        '''Generates and returns properties for plot.'''
+        props = {'marker': 'o', 'markersize': 7, 'linestyle': ''}
+        for key in kw:
+            props[key] = kw[key]
+        if 'color' not in props:
+            props['color'] = self.get_color()
+        self.properties.append(props)
+        return props
+
+    def get_plot_visibility(self, index):
+        '''Gets bool for plot visibility.'''
+        if self.plots[index]:
+            return self.plots[index][0].get_visible()
+        else:
+            return False
+    
+    def get_legend_visibility(self, index):
+        '''Gets bool for legend visibility.'''
+        return self.legends_visible[index]
+    
+    def set_legend_visibility(self, index, toggle):
+        '''Sets legend visibility.'''
+        if self.get_plot_visibility(index):
+            self.legends_visible[index] = bool(toggle)
+
+    def set_plot_visibility(self, index, toggle):
+        '''Sets plot visibility.'''
+        if not self.plots[index]:
+            return
+        self.plots[index][0].set_visible(bool(toggle))
+            
+        if self.legends_visible[index]:
+            if toggle:
+                self.legends_labels[index] = self.plots[index][0].properties()['label']
+            else:
+                self.legends_labels[index] = ''
+            self.legend()
+        self.draw()
         
+    def get_n(self):
+        '''Gets the number of plots.'''
+        return len(self.plots)
+
+    def remove_plot(self, index):
+        '''Removes plot.'''
+        self.plots.pop(index).remove()
+        self.colors = self.properties.pop(index)['color'] + self.colors
+        self.legends_labels.pop(index)
+        self.legends_visible.pop(index)
+        
+        
+    def get_properties(self, index, key=None):
+        '''Gets plot properties.'''
+        if key:
+            return self.properties[index][key]
+        else:
+            return self.properties[index]
+    
+    def change_properties(self, index, **kw):
+        '''Changes properties plot.'''
+        for key in kw:
+            self.properties[index][key] = kw[key]
+
+    def get_color(self):
+        '''Gets the next color.'''
+        color = self.colors.pop(0)
+        self.colors += color
+        return color
+
     def set_title(self, title, **kw):
         '''Sets title.'''
         self.__ax.set_title(title, **kw)
-    
+
     def set_main_labels(self, labels, **kw):
         '''Sets main labels.'''
-        for i,ax in enumerate(self.axes):
+        for i, ax in enumerate(self.axes):
             ax.set_label(labels[i], **kw)
-            
+
     def set_short_labels(self, labels, d=0.98, **kw):
         '''Sets the label on the  edges of the triangle.'''
         if self.min_maxOn:
@@ -275,131 +361,153 @@ class PyTernary():
         has = ['center', 'right', 'left']
         vas = ['bottom', 'center', 'center']
         if hasattr(self, 'short_title'):
-            for i in range(3): self.plots['short_labels'].pop().remove()
+            for i in range(3):
+                self.short_labels_plot.pop().remove()
         else:
             self.short_title = []
         self.d_title(d)
-        
+
         if not 'fontsize' in kw:
             kw['fontsize'] = 16
-            
-        for i,xy in enumerate(locations):
+
+        for i, xy in enumerate(locations):
             short_label = self.__ax.text(xy[0], xy[1], labels[i], ha=has[i], va=vas[i], **kw)
-            self.plots['short_labels'].append(short_label)
-    
+            self.short_labels_plot.append(short_label)
+
     def transform_points(self, data):
         '''Transforms from x1,x2,x3 to x,y data and from x,y to x1,x2,x3 data.'''
-        try: len(data[0])
-        except: data = [data]
-        
-        if data and len(data[0])==3:
+        try:
+            len(data[0])
+        except:
+            data = [data]
+
+        if data and len(data[0]) == 3:
             data = np.matrix([[d/sum(row) for d in row] for row in data], np.float64)
-            A = np.matrix([[.5,.5*np.sqrt(3)],[0,0],[1,0]])
+            A = np.matrix([[.5, .5*np.sqrt(3)], [0, 0], [1, 0]])
             xy = np.array(data*A)
-            return xy[:,0], xy[:,1]
-        elif data and len(data[0])==2:
+            return xy[:, 0], xy[:, 1]
+        elif data and len(data[0]) == 2:
             data = np.matrix(data)
-            A = np.matrix([[0,-np.sqrt(3),np.sqrt(3)],[2.,-1,-1]])/np.sqrt(3)
-            B = np.matrix([[0,1,0]]*len(data))
+            A = np.matrix([[0, -np.sqrt(3), np.sqrt(3)], [2., -1, -1]])/np.sqrt(3)
+            B = np.matrix([[0, 1, 0]]*len(data))
             xyz = np.array(data*A+B)
-            return xyz[:,0], xyz[:,1], xyz[:,2]
-    
+            return xyz[:, 0], xyz[:, 1], xyz[:, 2]
+
     def __plot_data(self, data, **kw):
         '''Plots data with the same settings.'''
         x, y = self.transform_points(data)
-        if 'marker' not in kw:
-            kw['linestyle'] = ''
-            kw['marker'] = 'o'
+        kw = self.__generate_properties(**kw)
         return self.ax.plot(x, y, **kw)
-        
+
     def plot_data(self, data, **kw):
         '''Plots data with the same settings and return the index.'''
         plot = self.__plot_data(data, **kw)
-        self.plots['plots'].append(plot)
-        index = len(self.plots['plots'])-1
+        self.plots.append(plot)
+        self.legends_labels.append(plot[0].properties()['label'])
+        self.legends_visible.append(True)
+        index = len(self.plots)-1
         return index
 
-    def add_null_plot(self):
+    def add_null_plot(self, **kw):
         '''Adds null plot.'''
-        self.plot['plots'].append([])
-  
+        self.plots.append([])
+        self.legends_labels.append('')
+        self.legends_visible.append(False)
+        self.__generate_properties(**kw)
+
     def update_plot(self, index, data=None, **kw):
         '''Updates data plot.'''
+        props = self.properties[index]
+        for key in kw:
+            props[key] = kw[key]
+        self.properties[index] = props
+        self.legends_labels[index] = props['label']
         if data:
             try:
-                self.plots['plots'][index][0].remove()
+                self.plots[index][0].remove()
             except:
                 pass
             xy = self.transform_points(data)
             if xy:
-                self.plots['plots'][index] = self.ax.plot(xy[0], xy[1], **kw)
+                self.plots[index] = self.ax.plot(*xy, **props)
             else:
-                self.plots['plots'][index] = []
+                self.plots[index] = []
         else:
-            self.plots['plots'][index][0].update(kw)
-        if hasattr(self, 'legend_labels'):
-            self.legend(self.legend_labels)
+            self.plots[index][0].update(props)
+        self.legend(self.legends_labels)
         self.draw()
 
-    def legend(self, labels):
+    def legend(self, labels=None):
         '''Plots the legend.'''
-        n = len(labels) if len(labels)<13 else 13  
-        self.legend_labels = labels
+        if labels:
+            self.legends_labels = labels
+            for i, label in enumerate(labels):
+                self.plots[i][0].set_label(label)
+        else:
+            labels = self.legends_labels
+        n = len(labels) if len(labels) < 13 else 13
+        
         lines, labels_ = [], []
-        for line, label in zip(self.plots['plots'], labels):
-            if line:
+        for line, label, b in zip(self.plots, labels, self.legends_visible):
+            if line and label and b:
                 lines.append(line[0])
                 labels_.append(label)
-        self.plots['legend'] = self.ax.legend(lines, labels_, loc=2, 
+        if lines:
+            self.legends = self.ax.legend(lines, labels_, loc=2,
                        numpoints=1, bbox_to_anchor=(0.70+0.03*n, .2, 1.2, 0.75))
-        
+
     def grid(self, toggle=None, **kw):
         '''Plots or removes the grids.'''
         for ax in self.axes:
             ax.grid(toggle, **kw)
         self.gridOn = ax.gridOn
-            
+
     def percentage(self, toggle=None):
         '''Changes to percentage.'''
         for ax in self.axes:
             ax.percentage = toggle if toggle else not ax.percentage
             ax.update()
-    
+
     def inverse(self):
         '''Inverses the axes.'''
-        A,B,C = tuple(self.get_main_labels())
-        new_labels = [B,C,A] if self.inverseOn else [C,A,B]
+        A, B, C = tuple(self.get_main_labels())
+        new_labels = [B, C, A] if self.inverseOn else [C, A, B]
         self.inverseOn = not self.inverseOn
-        for ax,t in zip(self.axes, new_labels):
+        for ax, t in zip(self.axes, new_labels):
             ax.inverse()
             ax.set_label(t)
-    
+
     def __plot_template(self, data, kind, **kw):
-        '''Plots the template using linear or cubic interpolation.''' 
-        data.sort(key=lambda xyz:xyz[-1]/float(sum(xyz)))
+        '''Plots the template using linear or cubic interpolation.'''
+        data.sort(key=lambda xyz: xyz[-1]/float(sum(xyz)))
         x, y = self.transform_points(data)
-        if kind=='fill':
-            if 'fill' not in kw: kw['fill']=False
+        if kind == 'fill':
+            if 'fill' not in kw:
+                kw['fill'] = False
             #hatch=['/' | '\' | '|' | '-' | '+' | 'x' | 'o' | 'O' | '.' | '*' ]
             template = self.ax.fill(x, y, **kw)
         else:
-            if 'linestyle' not in kw: kw['linestyle'] = '-'
-            if 'color' not in kw: kw['color'] = 'k'
-            if 'lw' not in kw: kw['lw'] = 1.2
-            if kind=='linear':
+            if 'linestyle' not in kw:
+                kw['linestyle'] = '-'
+            if 'color' not in kw:
+                kw['color'] = 'k'
+            if 'lw' not in kw:
+                kw['lw'] = 1.2
+            if kind == 'linear':
                 template = self.ax.plot(x, y, **kw)
-            elif kind=='cubic':
-                f = interpolate.interp1d(x, y, kind)  
+            elif kind == 'cubic':
+                f = interpolate.interp1d(x, y, kind)
                 x_ = np.linspace(min(x), max(x), 50)
                 template = self.ax.plot(x_, f(x_), **kw)
+        self.properties.append(kw)
         return template
-        
+
     def plot_template(self, data, kind='linear', **kw):
         '''Plots the template using linear or cubic interpolation and return 
         index.''' 
         template = self.__plot_template(data, kind, **kw)
-        self.plots['templates'].append(template)
-        index = len(self.plots['templates'])-1
+        self.plots.append(template)
+        index = len(self.plots)-1
         return index
         
     def get_main_labels(self):
@@ -413,15 +521,15 @@ class PyTernary():
             ax.min_max = self.min_maxOn
             ax.update()
         if self.short_labels:
-            fs = self.plots['short_labels'][0].get_fontsize()
+            fs = self.short_labels_plot[0].get_fontsize()
             self.set_short_labels(self.short_labels, d=0.98, fontsize=fs)
             
     def clear_plot(self, index = None):
         '''Clears the plot.'''
         if index:
             try:
-                self.plots['plots'][index][0].remove()
-                self.plots['plots'][index] = []
+                self.plots[index][0].remove()
+                self.plots[index] = []
             except:
                 pass
         else:
@@ -468,9 +576,13 @@ if __name__=='__main__':
     T.plot_data(data, color='green')
     T.plot_data([[60,10,30],[25,5,70]])
     T.plot_template(data+[[40,50,10]],'fill', hatch='/', fill=False, edgecolor='k', color='c')
+    #T.legend()
     T.legend(['Sample 1', 'Sample 2'])
+    T.set_plot_visibility(1, 0)
+    T.set_plot_visibility(1,1)
     #TP.inverse()
     #TP.update_plot(1, [[]], color='k', markersize=10, marker='o')
+    
     T.show()
 
     
