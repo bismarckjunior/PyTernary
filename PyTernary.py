@@ -13,14 +13,17 @@ from TernaryPlot import TernaryPlot
 import sys
 
 
+FORMATFILE = '.dat'
+
 class TableData(QtGui.QTableWidget):
     ROWHEIGHT = 25
 
-    def __init__(self, headers, dataWidget, parent=None):
-        super(TableData, self).__init__(parent)
+    def __init__(self, headers, nrow, ncol, dataWidget=None, parent=None):
+        super(TableData, self).__init__(nrow, ncol, parent)
         self.dataWidget = dataWidget
-        self.setRowCount(1)
-        self.setColumnCount(3)
+        #self.setRowCount(1)
+        #self.setColumnCount(3)
+        #TODO: dataWidget.headers()
         self.setHorizontalHeaderLabels(headers)
         header = self.horizontalHeader()
         header.setResizeMode(QtGui.QHeaderView.Stretch)
@@ -51,7 +54,7 @@ class TableData(QtGui.QTableWidget):
         row = self.rowCount() if not row else row+1
         self.insertRow(row)
         self.setRowHeight(row, self.ROWHEIGHT)
-        self.setVerticalHeaderItem(row, 
+        self.setVerticalHeaderItem(row,
                                    QtGui.QTableWidgetItem('%02i' % (row+1)))
         self.setCurrentCell(row, 0)
 
@@ -71,6 +74,7 @@ class TableData(QtGui.QTableWidget):
                 value = float(item.text()) if item and item.text() else None
                 line.append(value)
 
+            #Completing line
             if line.count(None) == 1:
                 i = line.index(None)
                 line.remove(None)
@@ -105,6 +109,7 @@ class TableData(QtGui.QTableWidget):
             else:
                 self.setCurrentCell(row+1, 0)
         elif(event.key() == QtCore.Qt.Key_Delete):
+            #Deleting items
             indexes = self.selectedIndexes()
             tmp = {}
             for index in indexes:
@@ -113,6 +118,7 @@ class TableData(QtGui.QTableWidget):
                 self.setItem(row, col, QtGui.QTableWidgetItem())
                 tmp[row] = tmp.get(row, 0)+1
 
+            #Deleting lines
             if self.rowCount() > 1:
                 for row in range(self.rowCount()-1)[::-1]:
                     if row in tmp and tmp[row] == 3:
@@ -121,20 +127,108 @@ class TableData(QtGui.QTableWidget):
                 self.__updateRows()
         else:
             QtGui.QTableView.keyPressEvent(self, event)
+
+class TernaryTableData(TableData):
+    def __init__(self, headers, dataWidget=None, parent=None):
+        super(TableData, self).__init__(parent)
         
+    
+
+class GroupTab(QtGui.QFrame):
+    def __init__(self, dataWidget=None, parent=None):
+        super(GroupTab, self).__init__(parent)
+        #TODO: dataWidget
+        self.headers = dataWidget
+        self.table = TableData(self.headers, 2, 2)
+
+        #Buttons
+        btn_import = QtGui.QPushButton('Im')
+        btn_export = QtGui.QPushButton('Ex')
+
+        #Setting buttons shape and tooltips
+        btn_import.setMaximumWidth(50)
+        btn_export.setMaximumWidth(50)
+        btn_import.setToolTip('Import data to group')
+        btn_export.setToolTip('Export group data')
+
+        #Conecting buttons
+        self.connect(btn_import, QtCore.SIGNAL('clicked()'),
+                     self.__importData2Table)
+        self.connect(btn_export, QtCore.SIGNAL('clicked()'),
+                     self.__exportData2File)
+
+        #Creating button layout
+        bbox = QtGui.QHBoxLayout()
+        bbox.addWidget(btn_import)
+        bbox.addWidget(btn_export)
+        bbox.addStretch()
+
+        #Creating main layout for group
+        mainBox = QtGui.QVBoxLayout()
+        mainBox.addWidget(self.table)
+        mainBox.addLayout(bbox)
+
+        self.setLayout(mainBox)
+
+    def __importData2Table(self):
+        '''Imports data to table.'''
+        fname = QtGui.QFileDialog.getOpenFileName(self, 'Open file',
+                                                  './Groups', '*' + FORMATFILE)
+        if not fname:
+            return
+
+        data = open(str(fname.toUtf8()), 'r').readlines()
+
+        lines_error = []
+        for nline, line in enumerate(data):
+            line = line.strip()
+            if line and line[0] != '#':
+                row = line.split()
+                if len(row) > 2:
+                    nrow = self.table.rowCount()
+                    self.table.insertRow(nrow)
+                    for col in range(3):
+                        cell = row[col] if row[col] != '-' else ''
+                        self.table.setItem(nrow, col,
+                                           QtGui.QTableWidgetItem(cell))
+                else:
+                    lines_error.append(str(nline+1))
+
+        self.table.insertRow(nrow+1)
+        #TODO: update_plot
+
+        #Warning Message
+        if lines_error:
+            wm = QtGui.QMessageBox(self)
+            wm.setWindowTitle('Warning')
+            msg = '''<h2 align="center">Warning</h2>
+                     <p>Problems in line(s): %s</p>'''
+            if len(lines_error) > 5:
+                lines_error = lines_error[:5]+['...']
+            wm.setText(msg % ', '.join(lines_error))
+            wm.show()
+
+    def __exportData2File(self):
+        '''Exports datat to file.'''
+        fname = QtGui.QFileDialog.getSaveFileName(self, 'Save file',
+                                                  './Groups', '*' + FORMATFILE)
+        if not fname:
+            return
+
+        if not fname.endsWith(FORMATFILE):
+            fname += self.FORMATFILE  # TODO: testar
+
+        f = open(str(fname.toUtf8()), 'w')
+        f.write('#%s\t%s\t%s\n' % tuple([h for h in self.headers]))
+        for row in range(self.table.rowCount()):
+            for col in range(3):
+                item = self.table.item(row, col) 
+                f.write('%s\t' % (item.text() if item and item.text() else '-'))
+            f.write('\n')
+        f.close()
 
 
 
-
-
-
-
-
-
-
-
-
-        
         
 
         
@@ -237,7 +331,7 @@ class PyTernary(QtGui.QMainWindow):
 
     def addGroupTab(self):
         '''Adds group tab.'''
-        table = TableData(self.shortTitles,1)
+#        table = TableData(self.shortTitles, 1, 3)
 #        table = QtGui.QTableWidget()
 #        table.setRowCount(1)
 #        table.setColumnCount(3)
@@ -254,23 +348,23 @@ class PyTernary(QtGui.QMainWindow):
 #        table.cellChanged.connect(lambda row, col:
 #            self.__cellTableChanged(table, row, col, len(self.groups)-1))
 #        #table.cellActivated.connect(lambda row, col: self.__activatedCellTable(table, row, col))
-
-        #Creating Buttons
+#
+#        Creating Buttons
 #        btn_addRow = QtGui.QPushButton('+')
 #        btn_removeRow = QtGui.QPushButton('-')
-        btn_import = QtGui.QPushButton('Im')
-        btn_export = QtGui.QPushButton('Ex')
-
-        #Setting buttons shape and tooltips
+#        btn_import = QtGui.QPushButton('Im')
+#        btn_export = QtGui.QPushButton('Ex')
+#
+#        Setting buttons shape and tooltips
 #        btn_addRow.setMaximumWidth(30)
 #        btn_removeRow.setMaximumWidth(30)
-        btn_import.setMaximumWidth(50)
-        btn_export.setMaximumWidth(50)
+#        btn_import.setMaximumWidth(50)
+#        btn_export.setMaximumWidth(50)
 #        btn_addRow.setToolTip('Add next row')
 #        btn_removeRow.setToolTip('Remove current row')
-        btn_import.setToolTip('Import data to group')
-        btn_export.setToolTip('Export group data')
-
+#        btn_import.setToolTip('Import data to group')
+#        btn_export.setToolTip('Export group data')
+#
 #        #Conecting buttons
 #        self.connect(btn_addRow, QtCore.SIGNAL('clicked()'),
 #                     lambda: self.__addRow(table))
@@ -280,19 +374,19 @@ class PyTernary(QtGui.QMainWindow):
 #                     lambda: self.__importData2Table(table, len(self.groups)))
 #        self.connect(btn_export, QtCore.SIGNAL('clicked()'),
 #                     lambda: self.__exportData2File(table))
-
-        #Creating button layout
-        bbox = QtGui.QHBoxLayout()
+#
+#        #Creating button layout
+#        bbox = QtGui.QHBoxLayout()
 #        bbox.addWidget(btn_addRow)
 #        bbox.addWidget(btn_removeRow)
-        bbox.addWidget(btn_import)
-        bbox.addWidget(btn_export)
-        bbox.addStretch()
-
-        #Creating main layout for group
-        vbox = QtGui.QVBoxLayout()
-        vbox.addWidget(table)
-        vbox.addLayout(bbox)
+#        bbox.addWidget(btn_import)
+#        bbox.addWidget(btn_export)
+#        bbox.addStretch()
+#
+#        #Creating main layout for group
+#        vbox = QtGui.QVBoxLayout()
+#        vbox.addWidget(table)
+#        vbox.addLayout(bbox)
 
         #Updating max group number
         if len(self.groups) == 0:
@@ -300,14 +394,17 @@ class PyTernary(QtGui.QMainWindow):
         self.maxGroupNumber += 1
 
         #Creating group
-        frame = QtGui.QFrame()
-        frame.setLayout(vbox)
+#        frame = QtGui.QFrame()
+#        frame.setLayout(vbox)
+        
+        frame = GroupTab(self.shortTitles)        
+        
         groupName = 'Group %d' % self.maxGroupNumber
         self.tab.addItem(frame, groupName)
         self.tab.setCurrentIndex(len(self.groups))
 
         #Saving group
-        self.groups.append([table, btn_import, btn_export])
+#        self.groups.append([table, btn_import, btn_export])
         self.groups_brief.append('')
         self.TernaryPlot.add_null_plot(label=groupName)
 
