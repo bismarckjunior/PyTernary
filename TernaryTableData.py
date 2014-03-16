@@ -8,6 +8,7 @@
 from PyQt4 import QtGui, QtCore
 import sys
 
+
 class TableData(QtGui.QTableWidget):
     ROWHEIGHT = 25
 
@@ -18,7 +19,8 @@ class TableData(QtGui.QTableWidget):
         self.setHorizontalHeaderLabels(headersLabel)
         header = self.horizontalHeader()
         header.setResizeMode(QtGui.QHeaderView.Stretch)
-        
+
+        #Inserting vertical headers and setting row heights
         self.__updateRows()
 
         #Connections
@@ -106,7 +108,7 @@ class TableData(QtGui.QTableWidget):
 
             #Deleting lines
             nrow = self.rowCount()
-            if self.rowCount() > 1:
+            if nrow > 1:
                 for row in range(nrow-1)[::-1]:
                     if row in tmp and tmp[row] == 3:
                             self.removeRow(row)
@@ -119,6 +121,7 @@ class TableData(QtGui.QTableWidget):
                 self.__updateRows()
         else:
             QtGui.QTableView.keyPressEvent(self, event)
+
 
 class TernaryTableData(QtGui.QTableWidget):
     ROWHEIGHT = 25
