@@ -3,54 +3,27 @@
 @author: Bismarck Gomes Souza Junior
 @date:   Sun Mar 16 09:19:06 2014
 @email:  bismarckjunior@outlook.com
-@brief:  Table of data
+@brief:  Table of data for Ternary plot.
 """
 from PyQt4 import QtGui, QtCore
 import sys
 
+
 class EditableHeaderMixin():
+    '''This class makes the header of TableData class editable.'''
     def __init__(self):
-        
-
-    
-        
-        
-        
-        
-        
-        
-class TableData(QtGui.QTableWidget):
-    ROWHEIGHT = 25
-
-    def __init__(self, nrow, ncol, headersLabel, parent=None):
-        super(TableData, self).__init__(nrow, ncol, parent)
-        self.headersLabel = headersLabel
-        self.ncol = ncol
-        self.setHorizontalHeaderLabels(headersLabel)
-        
-        header = self.horizontalHeader()
-        header.setResizeMode(QtGui.QHeaderView.Stretch)
-
         self.__modifyHorizontalHeader()
-        #Inserting vertical headers and setting row heights
-        self.__updateRows()
-
-        #Connections
-        #header.sectionDoubleClicked.connect(self.__changeHeaderItem)
-        self.cellChanged.connect(self.__cellTableChanged)
-
-        #Edit with oneclick
-        #self.setEditTriggers(QtGui.QAbstractItemView.CurrentChanged)
 
     def __modifyHorizontalHeader(self):
         header = self.horizontalHeader()
         self.line = QtGui.QLineEdit(parent=header.viewport())
-        self.line.setAlignment(QtCore.Qt.AlignTop)
+        self.line.setAlignment(QtCore.Qt.AlignTop | QtCore.Qt.AlignHCenter)
         self.line.setHidden(True)
-        
+
+        #Connecting
         header.sectionDoubleClicked.connect(self.__editHeader)
         self.line.editingFinished.connect(self.__doneEditing)
-        
+
     def __editHeader(self, index):
         header = self.horizontalHeader()
         edit_geometry = self.line.geometry()
@@ -58,15 +31,13 @@ class TableData(QtGui.QTableWidget):
         edit_geometry.moveLeft(header.sectionViewportPosition(index))
         self.line.setGeometry(edit_geometry)
         self.line.setText(self.headersLabel[index])
-        self.line.setHidden(False) # Make it visiable
-        self.line.blockSignals(False) # Let it send signals
+        self.line.setHidden(False)
+        self.line.blockSignals(False)
         self.line.setFocus()
         self.line.selectAll()
         self.index = index
-        
+
     def __doneEditing(self):
-        # This block signals needs to happen first otherwise I have lose focus
-        # problems again when there are no rows
         self.line.blockSignals(True)
         self.line.setHidden(True)
         newHeader = str(self.line.text())
@@ -74,18 +45,40 @@ class TableData(QtGui.QTableWidget):
         self.line.setText('')
         self.setCurrentIndex(QtCore.QModelIndex())
 
-    def __changeHeaderItem(self, index):
-        oldHeader = self.horizontalHeaderItem(index).text()
-        newHeader, ok = QtGui.QInputDialog.getText(self,
-                                                   'Change Header Label',
-                                                   'Header:',
-                                                   QtGui.QLineEdit.Normal,
-                                                   oldHeader)
-        if ok:
-            self.headersLabel[index] = newHeader
-            self.horizontalHeaderItem(index).setText(newHeader)
+#    def __changeHeaderItem(self, index):
+#        oldHeader = self.horizontalHeaderItem(index).text()
+#        newHeader, ok = QtGui.QInputDialog.getText(self,
+#                                                   'Change Header Label',
+#                                                   'Header:',
+#                                                   QtGui.QLineEdit.Normal,
+#                                                   oldHeader)
+#        if ok:
+#            self.headersLabel[index] = newHeader
+#            self.horizontalHeaderItem(index).setText(newHeader)
 
-    def __emptyCell(self, row, col):
+
+class TableDataBase(QtGui.QTableWidget):
+    ROWHEIGHT = 25
+
+    def __init__(self, nrow, ncol, headersLabel, parent=None):
+        super(TableDataBase, self).__init__(nrow, ncol, parent)
+        self.headersLabel = headersLabel
+        self.ncol = ncol
+        self.setHorizontalHeaderLabels(headersLabel)
+
+        header = self.horizontalHeader()
+        header.setResizeMode(QtGui.QHeaderView.Stretch)
+
+        #Inserting vertical headers and setting row heights
+        self.updateRows()
+
+        #Connections
+        self.cellChanged.connect(self.__cellTableChanged)
+
+        #Edit with oneclick
+        #self.setEditTriggers(QtGui.QAbstractItemView.CurrentChanged)
+
+    def isEmptyCell(self, row, col):
         'Boole for empty cell.'
         item = self.item(row, col)
         if item and item.text():
@@ -93,24 +86,24 @@ class TableData(QtGui.QTableWidget):
         else:
             return True
 
-    def __emptyRow(self, row, colmax=None):
+    def isEmptyRow(self, row, colmax=None):
         'Bool for empty row.'
         colmax = colmax if colmax else self.ncol
         for col in range(colmax):
-            if not self.__emptyCell(row, col):
+            if not self.isEmptyCell(row, col):
                 return False
         return True
 
-    def __addRow(self, row=None):
+    def addRow(self, row=None):
         row = self.rowCount() if not row else row+1
-        if not self.__emptyRow(row-1):
+        if not self.isEmptyRow(row-1):
             self.insertRow(row)
             self.setRowHeight(row, self.ROWHEIGHT)
             self.setVerticalHeaderItem(row,
                                        QtGui.QTableWidgetItem('%02i' % (row+1)))
         #self.setCurrentCell(row, 0)
 
-    def __updateRows(self):
+    def updateRows(self):
         header = ['%02i' % (i+1) for i in range(self.rowCount())]
         self.setVerticalHeaderLabels(header)
         for i in range(self.rowCount()):
@@ -121,12 +114,12 @@ class TableData(QtGui.QTableWidget):
         text = item.text().replace(',', '.')
         try:
             value = float(text)
-            self.__addRow()
+            self.addRow()
             item.setText('%.2f' % value)
         except ValueError:
             item.setText('')
             self.setCurrentCell(row, col)
-        if col == self.ncol-1 and self.__emptyRow(row, col):
+        if col == self.ncol-1 and self.isEmptyRow(row, col):
             self.setCurrentCell(row+1, 0)
 
     def keyPressEvent(self, event):
@@ -136,7 +129,7 @@ class TableData(QtGui.QTableWidget):
             #Return key
             if col < self.ncol-1:
                 self.setCurrentCell(row, col+1)
-            elif self.__emptyRow(row):
+            elif self.isEmptyRow(row):
                 self.setCurrentCell(row, 0)
             else:
                 self.setCurrentCell(row+1, 0)
@@ -157,28 +150,30 @@ class TableData(QtGui.QTableWidget):
                             self.removeRow(row)
                 row = self.rowCount()-2
                 while(row >= 0):
-                    if self.__emptyRow(row) and self.__emptyRow(row+1):
+                    if self.isEmptyRow(row) and self.isEmptyRow(row+1):
                         self.removeRow(row)
                     row -= 1
-
-                self.__updateRows()
+                self.updateRows()
         else:
             QtGui.QTableView.keyPressEvent(self, event)
 
 
+class TableData(TableDataBase, EditableHeaderMixin):
+    def __init__(self, nrow, ncol, headersLabel, parent=None):
+        super(TableData, self).__init__(nrow, ncol, headersLabel, parent)
+        EditableHeaderMixin.__init__(self)
+
+
 class TernaryTableData(TableData):
-    ROWHEIGHT = 25
     ROWSUM = 100
 
     def __init__(self, headersLabel, dataWidget=None, parent=None):
         super(TernaryTableData, self).__init__(1, 3, headersLabel, parent)
         self.dataWidget = dataWidget
-        print self.headersLabel
 
         #Connections
         headers = self.horizontalHeader()
         headers.sectionDoubleClicked.connect(self.__changeHeaderItem)
-        
         self.cellChanged.connect(self.__cellTableChanged)
 
     def __changeHeaderItem(self, index):
@@ -210,7 +205,6 @@ class TernaryTableData(TableData):
 class main(QtGui.QMainWindow):
     def __init__(self, parent=None):
         super(main, self).__init__(parent)
-        
         table = TernaryTableData(['A', 'B', 'C'])
         box = QtGui.QVBoxLayout()
         box.addWidget(table)

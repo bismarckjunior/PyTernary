@@ -9,137 +9,19 @@ from PyQt4 import QtGui, QtCore
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
 from matplotlib.figure import Figure
-from TernaryPlot import TernaryPlot  
+from TernaryPlot import TernaryPlot 
+from TernaryTableData import TernaryTableData 
 import sys
 
 
-FORMATFILE = '.dat'
+class TabFrame(QtGui.QFrame):
+    FORMATFILE = '.dat'
 
-class TableData(QtGui.QTableWidget):
-    ROWHEIGHT = 25
-
-    def __init__(self, headers, nrow, ncol, dataWidget=None, parent=None):
-        super(TableData, self).__init__(nrow, ncol, parent)
-        self.dataWidget = dataWidget
-        #self.setRowCount(1)
-        #self.setColumnCount(3)
-        #TODO: dataWidget.headers()
-        self.setHorizontalHeaderLabels(headers)
-        header = self.horizontalHeader()
-        header.setResizeMode(QtGui.QHeaderView.Stretch)
-        header.sectionDoubleClicked.connect(self.__changeHeaderItem)
-        self.removeRow(0)
-        self.__addRow()
-
-        #Connections
-        self.cellChanged.connect(self.__cellTableChanged)
-
-        #Edit with oneclick
-        #self.setEditTriggers(QtGui.QAbstractItemView.CurrentChanged)
-
-    def __changeHeaderItem(self, index):
-        oldHeader = self.horizontalHeaderItem(index).text()
-        newHeader, ok = QtGui.QInputDialog.getText(self,
-                                                   'Change Header Label',
-                                                   'Header:',
-                                                   QtGui.QLineEdit.Normal,
-                                                   oldHeader)
-        if ok:
-            self.dataWidget.shortTitles[index] = newHeader
-            #TODO: dataWidget
-            for table in [group['table'] for group in self.dataWidget.groups]:
-                table.horizontalHeaderItem(index).setText(newHeader)
-
-    def __addRow(self, row=None):
-        row = self.rowCount() if not row else row+1
-        self.insertRow(row)
-        self.setRowHeight(row, self.ROWHEIGHT)
-        self.setVerticalHeaderItem(row,
-                                   QtGui.QTableWidgetItem('%02i' % (row+1)))
-        self.setCurrentCell(row, 0)
-
-    def __updateRows(self):
-        header = ['%02i' % (i+1) for i in range(self.rowCount())]
-        self.setVerticalHeaderLabels(header)
-
-    def __cellTableChanged(self, row, col):
-        text = self.item(row, col).text().replace(',', '.')
-        try:
-            value = float(text)
-            self.item(row, col).setText('%.2f' % value)
-
-            line = []
-            for i in range(3):
-                item = self.item(row, i)
-                value = float(item.text()) if item and item.text() else None
-                line.append(value)
-
-            #Completing line
-            if line.count(None) == 1:
-                i = line.index(None)
-                line.remove(None)
-                sum_ = sum(line)
-                if sum_ <= 1:
-                    value = 1. - sum_
-                elif sum_ <= 100:
-                    value = 100. - sum_
-                else:
-                    value = ''
-                if i != col:
-                    item = QtGui.QTableWidgetItem(str(value))
-                    self.setItem(row, i, item)
-                    self.setCurrentCell(row, i)
-            #TODO: update_plot
-
-        except ValueError:
-            pass
-
-    def keyPressEvent(self, event):
-        row = self.currentRow()
-        col = self.currentColumn()
-        if (event.key() == QtCore.Qt.Key_Return):
-            if col < 2:
-                self.setCurrentCell(row, col+1)
-            elif col == 2 and row == self.rowCount()-1:
-                for i in range(3):
-                    item = self.item(row, i)
-                    if item or (item and item.text()):
-                        self.__addRow()
-                        break
-            else:
-                self.setCurrentCell(row+1, 0)
-        elif(event.key() == QtCore.Qt.Key_Delete):
-            #Deleting items
-            indexes = self.selectedIndexes()
-            tmp = {}
-            for index in indexes:
-                row = index.row()
-                col = index.column()
-                self.setItem(row, col, QtGui.QTableWidgetItem())
-                tmp[row] = tmp.get(row, 0)+1
-
-            #Deleting lines
-            if self.rowCount() > 1:
-                for row in range(self.rowCount()-1)[::-1]:
-                    if row in tmp and tmp[row] == 3:
-                        self.removeRow(row)
-                        #TODO: update_plot
-                self.__updateRows()
-        else:
-            QtGui.QTableView.keyPressEvent(self, event)
-
-class TernaryTableData(TableData):
-    def __init__(self, headers, dataWidget=None, parent=None):
-        super(TableData, self).__init__(parent)
-        
-    
-
-class GroupTab(QtGui.QFrame):
     def __init__(self, dataWidget=None, parent=None):
-        super(GroupTab, self).__init__(parent)
+        super(TabFrame, self).__init__(parent)
         #TODO: dataWidget
         self.headers = dataWidget
-        self.table = TableData(self.headers, 2, 2)
+        self.table = TernaryTableData(self.headers)
 
         #Buttons
         btn_import = QtGui.QPushButton('Im')
@@ -173,7 +55,8 @@ class GroupTab(QtGui.QFrame):
     def __importData2Table(self):
         '''Imports data to table.'''
         fname = QtGui.QFileDialog.getOpenFileName(self, 'Open file',
-                                                  './Groups', '*' + FORMATFILE)
+                                                  './Groups',
+                                                  '*' + self.FORMATFILE)
         if not fname:
             return
 
@@ -211,11 +94,12 @@ class GroupTab(QtGui.QFrame):
     def __exportData2File(self):
         '''Exports datat to file.'''
         fname = QtGui.QFileDialog.getSaveFileName(self, 'Save file',
-                                                  './Groups', '*' + FORMATFILE)
+                                                  './Groups',
+                                                  '*' + self.FORMATFILE)
         if not fname:
             return
 
-        if not fname.endsWith(FORMATFILE):
+        if not fname.endsWith(self.FORMATFILE):
             fname += self.FORMATFILE  # TODO: testar
 
         f = open(str(fname.toUtf8()), 'w')
@@ -228,10 +112,6 @@ class GroupTab(QtGui.QFrame):
         f.close()
 
 
-
-        
-
-        
 class PyTernary(QtGui.QMainWindow):
     FORMATFILE = '.dat'
 
@@ -397,7 +277,7 @@ class PyTernary(QtGui.QMainWindow):
 #        frame = QtGui.QFrame()
 #        frame.setLayout(vbox)
         
-        frame = GroupTab(self.shortTitles)        
+        frame = TabFrame(self.shortTitles)        
         
         groupName = 'Group %d' % self.maxGroupNumber
         self.tab.addItem(frame, groupName)
@@ -407,101 +287,6 @@ class PyTernary(QtGui.QMainWindow):
 #        self.groups.append([table, btn_import, btn_export])
         self.groups_brief.append('')
         self.TernaryPlot.add_null_plot(label=groupName)
-
-#    def __addRow(self, table):
-#        '''Adds row.'''
-#        row = table.rowCount() if table.currentRow()==-1 else table.currentRow()+1
-#        table.insertRow(row)
-#        self.__updateRows(table)
-#        
-#        #Setting selection
-#        table.setCurrentCell(row, 0)
-#        for r,s in[(row-1, False), (row, True)]: 
-#            for col in range(table.columnCount()):
-#                item = table.item(r, col)
-#                if not item: table.setItem(r, col, QtGui.QTableWidgetItem(''))
-#                table.item(r,col).setSelected(s)
-#    
-#    def __removeRow(self, table):
-#        '''Removes row.'''
-#        if table.rowCount()==1:
-#            self.__clearRow(table, 0)
-#            return
-#        row = table.rowCount()-1 if table.currentRow()==-1 else table.currentRow()
-#        item = table.item(row, table.currentRow())
-#        table.removeRow(row)
-#        self.__updateRows(table)
-#        
-#        #Setting selection
-#        if row==table.rowCount(): row -= 1
-#        table.setCurrentCell(row, 0)
-#        for col in range(table.columnCount()):
-#            item = table.item(row, col)
-#            if not item: table.setItem(row, col, QtGui.QTableWidgetItem(''))
-#            table.item(row,col).setSelected(True)
-#        
-#    def __clearRow(self, table, row):
-#        '''Clears row.'''
-#        for col in range(3):
-#            table.setItem(row, col, QtGui.QTableWidgetItem(''))
-#    
-#    def __updateRows(self, table):
-#        '''Updates rows.'''
-#        table.setVerticalHeaderLabels(['%02i' % (i+1) for i in range(table.rowCount())])
-#        for i in range(table.rowCount()):
-#            table.setRowHeight(i, 20)
-#    
-#    def __changeHorizontalHeader(self, index):
-#        '''Changes horizontal header.'''
-#        table = self.groups[0][0]
-#        oldHeader = table.horizontalHeaderItem(index).text()
-#        newHeader, ok = QtGui.QInputDialog.getText(self, 
-#                                                   'Change Header Label', 'Header:', 
-#                                                   QtGui.QLineEdit.Normal, oldHeader)
-#        if ok:
-#            self.shortTitles[index] = newHeader
-#            self.TernaryPlot.set_short_labels(self.shortTitles)
-#            self.canvas.draw()
-#            for table in [t[0] for t in self.groups]:
-#                table.horizontalHeaderItem(index).setText(newHeader)
-#                
-#    def __cellTableChanged(self, table, row, col, index):
-#        '''Connection to cell table change.'''
-#        text = table.item(row, col).text()
-#        
-#        try:        
-#            if str(float(text)) != text:
-#                raise ValueError
-#        except:
-#            try:
-#                text = str(float(text.replace(',','.')))
-#            except:
-#                text = ''
-#            table.item(row, col).setText(text)
-#            return
-#                
-#        line = []
-#        for i in range(3):
-#            item = table.item(row, i)
-#            if item and item.text():
-#                line.append(float(item.text()) if item.text() else None)
-#            else:
-#                line.append(None)
-#
-#        if line.count(None) == 1:
-#            i = line.index(None)
-#            line.remove(None)
-#            sum_ = sum(line)
-#            if sum_ <= 1:
-#                value = 1-sum_
-#            elif sum_ <= 100:
-#                value = 100-sum_
-#            if sum_ <= 100:
-#                item_ = QtGui.QTableWidgetItem(str(value))
-#                item_.setBackgroundColor(QtGui.QColor('white'))
-#                table.setItem(row, i, item_)
-#        elif None not in line:
-#            self.__updateGroupPlot(index)
 
     def __updateGroupPlot(self, index):
         '''Updates the plot for group in "index" position.'''
