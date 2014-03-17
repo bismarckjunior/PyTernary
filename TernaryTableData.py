@@ -30,7 +30,7 @@ class EditableHeaderMixin():
         edit_geometry.setWidth(header.sectionSize(index))
         edit_geometry.moveLeft(header.sectionViewportPosition(index))
         self.line.setGeometry(edit_geometry)
-        self.line.setText(self.headersLabel[index])
+        self.line.setText(self.headerLabels[index])
         self.line.setHidden(False)
         self.line.blockSignals(False)
         self.line.setFocus()
@@ -53,18 +53,18 @@ class EditableHeaderMixin():
 #                                                   QtGui.QLineEdit.Normal,
 #                                                   oldHeader)
 #        if ok:
-#            self.headersLabel[index] = newHeader
+#            self.headerLabels[index] = newHeader
 #            self.horizontalHeaderItem(index).setText(newHeader)
 
 
 class TableDataBase(QtGui.QTableWidget):
     ROWHEIGHT = 25
 
-    def __init__(self, nrow, ncol, headersLabel, parent=None):
+    def __init__(self, nrow, ncol, headerLabels, parent=None):
         super(TableDataBase, self).__init__(nrow, ncol, parent)
-        self.headersLabel = headersLabel
+        self.headerLabels = headerLabels
         self.ncol = ncol
-        self.setHorizontalHeaderLabels(headersLabel)
+        self.setHorizontalHeaderLabels(headerLabels)
 
         header = self.horizontalHeader()
         header.setResizeMode(QtGui.QHeaderView.Stretch)
@@ -111,6 +111,7 @@ class TableDataBase(QtGui.QTableWidget):
 
     def __cellTableChanged(self, row, col):
         item = self.item(row, col)
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
         text = item.text().replace(',', '.')
         try:
             value = float(text)
@@ -159,16 +160,16 @@ class TableDataBase(QtGui.QTableWidget):
 
 
 class TableData(TableDataBase, EditableHeaderMixin):
-    def __init__(self, nrow, ncol, headersLabel, parent=None):
-        super(TableData, self).__init__(nrow, ncol, headersLabel, parent)
+    def __init__(self, nrow, ncol, headerLabels, parent=None):
+        super(TableData, self).__init__(nrow, ncol, headerLabels, parent)
         EditableHeaderMixin.__init__(self)
 
 
 class TernaryTableData(TableData):
     ROWSUM = 100
 
-    def __init__(self, headersLabel, dataWidget=None, parent=None):
-        super(TernaryTableData, self).__init__(1, 3, headersLabel, parent)
+    def __init__(self, headerLabels, dataWidget=None, parent=None):
+        super(TernaryTableData, self).__init__(1, 3, headerLabels, parent)
         self.dataWidget = dataWidget
 
         #Connections

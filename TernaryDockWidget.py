@@ -6,16 +6,17 @@
 @brief:  
 """
 from PyQt4 import QtGui, QtCore
+from TernaryTableData import TernaryTableData
+import sys
 
 
 class TabFrame(QtGui.QFrame):
     FORMATFILE = '.dat'
 
-    def __init__(self, dataWidget=None, parent=None):
+    def __init__(self, headerLabels, parent=None):
         super(TabFrame, self).__init__(parent)
-        #TODO: dataWidget
-        self.headers = dataWidget
-        self.table = TernaryTableData(self.headers)
+        self.headerLabels = headerLabels
+        self.table = TernaryTableData(self.headerLabels)
 
         #Buttons
         btn_import = QtGui.QPushButton('Im')
@@ -62,8 +63,9 @@ class TabFrame(QtGui.QFrame):
             if line and line[0] != '#':
                 row = line.split()
                 if len(row) > 2:
-                    nrow = self.table.rowCount()
+                    nrow = self.table.rowCount()-1
                     self.table.insertRow(nrow)
+                    print row
                     for col in range(3):
                         cell = row[col] if row[col] != '-' else ''
                         self.table.setItem(nrow, col,
@@ -71,17 +73,18 @@ class TabFrame(QtGui.QFrame):
                 else:
                     lines_error.append(str(nline+1))
 
-        self.table.insertRow(nrow+1)
+        self.table.updateRows()
         #TODO: update_plot
 
         #Warning Message
         if lines_error:
+            lines_error = ['4','5']
             wm = QtGui.QMessageBox(self)
-            wm.setWindowTitle('Warning')
+            wm.setWindowTitle('PyTernary')
             msg = '''<h2 align="center">Warning</h2>
-                     <p>Problems in line(s): %s</p>'''
+                     <center>Problems in line(s): %s. </center>'''
             if len(lines_error) > 5:
-                lines_error = lines_error[:5]+['...']
+                lines_error = lines_error[:5]+['..']
             wm.setText(msg % ', '.join(lines_error))
             wm.show()
 
@@ -97,15 +100,85 @@ class TabFrame(QtGui.QFrame):
             fname += self.FORMATFILE  # TODO: testar
 
         f = open(str(fname.toUtf8()), 'w')
-        f.write('#%s\t%s\t%s\n' % tuple([h for h in self.headers]))
-        for row in range(self.table.rowCount()):
+        header = [h.strip() for h in self.headerLabels]
+        f.write('#{:9} {:10} {:10}\n'.format(*header))
+        for row in range(self.table.rowCount()-1):
+            line = []
             for col in range(3):
-                item = self.table.item(row, col) 
-                f.write('%s\t' % (item.text() if item and item.text() else '-'))
-            f.write('\n')
+                item = self.table.item(row, col)
+                line.append(str(item.text()) if item and item.text() else '-')
+            f.write('{:10} {:10} {:10}\n'.format(*line))
         f.close()
 
 
 class TernaryToolBox(QtGui.QToolBox):
-    def __init__(self, parent=None):
+    def __init__(self, headerLabels, parent=None):
         super(TernaryToolBox, self).__init__(parent)
+        self.headerLabels = headerLabels
+        self.setMaximumWidth(300)
+        self.addTab()
+
+    def addTab(self):
+        #Updating max tab number
+        if self.count() == 0:
+            print 'ok'
+            self.maxTabNumber = 0
+        self.maxTabNumber += 1
+
+        frame = TabFrame(self.headerLabels)
+        TabName = 'Group %d' % self.maxTabNumber
+        self.addItem(frame, TabName)
+        self.setCurrentIndex(self.count()-1)
+
+    def removeCurrentTab(self):
+        self.removeTab(self.currentIndex())
+
+    def removeTab(self, index):
+        if self.count() == 1:
+            return
+        if index == self.count()-1:
+            self.maxTabNumber -= 1
+        self.removeItem(index)
+        self.setCurrentIndex(index-1)
+        #TODO: update_plot
+
+
+class main(QtGui.QMainWindow):
+    def __init__(self, parent=None):
+        super(main, self).__init__(parent)
+        #frame = TabFrame(['A', 'B', 'C'])
+        
+        #Buttons
+        btn_add = QtGui.QPushButton('+')
+        btn_del = QtGui.QPushButton('-')
+        
+        toolBox = TernaryToolBox(['A', 'B', 'C'])
+        box = QtGui.QVBoxLayout()
+        box.addWidget(btn_add)
+        box.addWidget(btn_del)
+        box.addWidget(toolBox)
+        frame = QtGui.QFrame()
+        frame.setLayout(box)
+        self.setCentralWidget(frame)
+        
+        #Connecting
+        self.connect(btn_add, QtCore.SIGNAL('clicked()'), toolBox.addTab)
+        self.connect(btn_del, QtCore.SIGNAL('clicked()'), toolBox.removeCurrentTab)
+        
+
+
+
+
+class TernaryDockWidget(QtGui.QDockWidget):
+    pass
+
+
+
+
+
+
+if __name__ == '__main__':
+    app = QtGui.QApplication(sys.argv)
+    main = main()
+    main.show()
+    sys.exit(app.exec_())
