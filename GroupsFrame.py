@@ -3,20 +3,21 @@
 @author: Bismarck Gomes Souza Junior
 @date:   Sun Mar 16 20:08:55 2014
 @email:  bismarckjunior@outlook.com
-@brief:  
+@brief:  Frame for groups: QToolbox whith QTableWidget
 """
 from PyQt4 import QtGui, QtCore
 from TernaryTableData import TernaryTableData
 import sys
 
 
-class TabFrame(QtGui.QFrame):
+class TableFrame(QtGui.QFrame):
     FORMATFILE = '.dat'
 
     def __init__(self, headerLabels, parent=None):
-        super(TabFrame, self).__init__(parent)
+        super(TableFrame, self).__init__(parent)
         self.headerLabels = headerLabels
         self.table = TernaryTableData(self.headerLabels)
+        self.table.setGeometry(QtCore.QRect(10, 50, 700, 350))
 
         #Buttons
         btn_import = QtGui.QPushButton('Im')
@@ -78,7 +79,6 @@ class TabFrame(QtGui.QFrame):
 
         #Warning Message
         if lines_error:
-            lines_error = ['4','5']
             wm = QtGui.QMessageBox(self)
             wm.setWindowTitle('PyTernary')
             msg = '''<h2 align="center">Warning</h2>
@@ -111,9 +111,9 @@ class TabFrame(QtGui.QFrame):
         f.close()
 
 
-class TernaryToolBox(QtGui.QToolBox):
+class GroupsToolBox(QtGui.QToolBox):
     def __init__(self, headerLabels, parent=None):
-        super(TernaryToolBox, self).__init__(parent)
+        super(GroupsToolBox, self).__init__(parent)
         self.headerLabels = headerLabels
         self.setMaximumWidth(300)
         self.addTab()
@@ -121,11 +121,11 @@ class TernaryToolBox(QtGui.QToolBox):
     def addTab(self):
         #Updating max tab number
         if self.count() == 0:
-            print 'ok'
             self.maxTabNumber = 0
         self.maxTabNumber += 1
 
-        frame = TabFrame(self.headerLabels)
+        frame = TableFrame(self.headerLabels)
+        frame.setMinimumHeight(200)
         TabName = 'Group %d' % self.maxTabNumber
         self.addItem(frame, TabName)
         self.setCurrentIndex(self.count()-1)
@@ -143,38 +143,45 @@ class TernaryToolBox(QtGui.QToolBox):
         #TODO: update_plot
 
 
+class GroupsFrame(QtGui.QFrame):
+    def __init__(self, headerLabels, parent=None):
+        super(GroupsFrame, self).__init__(parent)
+
+        toolBox = GroupsToolBox(['A', 'B', 'C'])
+
+        #Buttons
+        btn_addGroup = QtGui.QPushButton('+')
+        btn_delGroup = QtGui.QPushButton('-')
+
+        #Setting buttons shape and tooltips
+        btn_addGroup.setMaximumWidth(30)
+        btn_delGroup.setMaximumWidth(30)
+        btn_addGroup.setToolTip('Add a group')
+        btn_delGroup.setToolTip('Remove the current group')
+
+        #Conecting buttons
+        self.connect(btn_addGroup, QtCore.SIGNAL('clicked()'), toolBox.addTab)
+        self.connect(btn_delGroup, QtCore.SIGNAL('clicked()'),
+                     toolBox.removeCurrentTab)
+
+        #Buttons layout
+        bbox = QtGui.QHBoxLayout()
+        bbox.addWidget(btn_addGroup)
+        bbox.addWidget(btn_delGroup)
+        bbox.addStretch()
+
+        #Main layout
+        box = QtGui.QVBoxLayout()
+        box.addLayout(bbox)
+        box.addWidget(toolBox)
+        self.setLayout(box)
+        self.setMinimumHeight(400)
+
+
 class main(QtGui.QMainWindow):
     def __init__(self, parent=None):
         super(main, self).__init__(parent)
-        #frame = TabFrame(['A', 'B', 'C'])
-        
-        #Buttons
-        btn_add = QtGui.QPushButton('+')
-        btn_del = QtGui.QPushButton('-')
-        
-        toolBox = TernaryToolBox(['A', 'B', 'C'])
-        box = QtGui.QVBoxLayout()
-        box.addWidget(btn_add)
-        box.addWidget(btn_del)
-        box.addWidget(toolBox)
-        frame = QtGui.QFrame()
-        frame.setLayout(box)
-        self.setCentralWidget(frame)
-        
-        #Connecting
-        self.connect(btn_add, QtCore.SIGNAL('clicked()'), toolBox.addTab)
-        self.connect(btn_del, QtCore.SIGNAL('clicked()'), toolBox.removeCurrentTab)
-        
-
-
-
-
-class TernaryDockWidget(QtGui.QDockWidget):
-    pass
-
-
-
-
+        self.setCentralWidget(GroupsFrame(['A', 'B', 'C']))
 
 
 if __name__ == '__main__':
