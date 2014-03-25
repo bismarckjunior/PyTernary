@@ -45,6 +45,9 @@ class EditableHeaderMixin():
         self.line.setHidden(True)
         newHeader = str(self.line.text())
         self.horizontalHeaderItem(self.lindex).setText(newHeader)
+        self.headerLabels[self.lindex] = newHeader
+        #self.ternaryData.headerTableLabels[self.lindex] = newHeader
+        self.ternaryData.renameTableHeaders(self.headerLabels)
         self.line.setText('')
         self.setCurrentIndex(QtCore.QModelIndex())
 

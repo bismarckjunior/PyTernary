@@ -114,6 +114,7 @@ class GroupsToolBox(QtGui.QToolBox):
     def __init__(self, ternaryData, parent=None):
         super(GroupsToolBox, self).__init__(parent)
         self.ternaryData = ternaryData
+        self.ternaryData.renameTableHeaders = self.renameTableHeaders
         self.setMaximumWidth(300)
         self.frames = []
         self.addTab()
@@ -125,14 +126,18 @@ class GroupsToolBox(QtGui.QToolBox):
         self.maxTabNumber += 1
 
         frame = TableFrame(self.ternaryData)
-        self.frames.append(frame)
         frame.setMinimumHeight(200)
+        self.frames.append(frame)
         TabName = 'Group %d' % self.maxTabNumber
         self.addItem(frame, TabName)
         self.setCurrentIndex(self.count()-1)
 
     def removeCurrentTab(self):
         self.removeTab(self.currentIndex())
+
+    def renameTableHeaders(self, tableHeaders):
+        for frame in self.frames:
+            frame.table.setHorizontalHeaderLabels(tableHeaders)
 
     def removeTab(self, index):
         if self.count() == 1:
