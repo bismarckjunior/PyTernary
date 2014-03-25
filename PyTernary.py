@@ -10,7 +10,8 @@ from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
 from matplotlib.figure import Figure
 from TernaryPlot import TernaryPlot 
-from TernaryToolBox import TernaryToolBox
+from TernaryData import TernaryData
+from GroupsFrame import GroupsFrame
 import sys
 
 
@@ -28,77 +29,34 @@ class PyTernary(QtGui.QMainWindow):
         self.create_main_frame()
 
     def create_main_frame(self):
-        '''Creates main frame.'''
-        self.main_frame = QtGui.QWidget()
+        main_frame = QtGui.QWidget()
 
-        #Creating short title A, B, C
-        self.shortTitles = []
-        for t in ['A', 'B', 'C']:
-            self.shortTitles.append(t)
+        short_labels = ['A', 'B', 'C']
 
         #Creating Plot panel
         self.fig = Figure()
         self.canvas = FigureCanvas(self.fig)
-        self.canvas.setParent(self.main_frame)
-        self.TernaryPlot = TernaryPlot(self.fig, short_labels=self.shortTitles)
+        self.canvas.setParent(main_frame)
 
-        #Creating Toolbox for groups
-#        self.tab = QtGui.QToolBox()
-#        self.tab.setMaximumWidth(300)
-        self.toolBox = TernaryToolBox(self.shortTitles)
-        self.groups = []
-        self.groups_brief = []
-#        self.maxGroupNumber = 0
-#        self.addGroupTab()
+        #Creating TernaryPlot
+        ternaryPlot = TernaryPlot(self.fig, short_labels=short_labels)
 
-        #Creating buttons for groups
-        bbox = QtGui.QHBoxLayout()
-        self.btn_addGroup = QtGui.QPushButton('+')
-        self.btn_removeGroup = QtGui.QPushButton('-')
-        self.btn_editGroups = QtGui.QPushButton('*')
-
-        #Setting buttons shape and tooltip
-        self.btn_addGroup.setMaximumWidth(30)
-        self.btn_removeGroup.setMaximumWidth(30)
-        self.btn_editGroups.setMaximumWidth(30)
-        self.btn_addGroup.setToolTip('Add a group')
-        self.btn_removeGroup.setToolTip('Remove the current group')
-        self.btn_editGroups.setToolTip('Edit the panel labels')
-
-        #Creating layout for buttons
-        bbox.addWidget(self.btn_addGroup)
-        bbox.addWidget(self.btn_removeGroup)
-        bbox.addStretch(1)
-        bbox.addWidget(self.btn_editGroups)
-        bbox.setSpacing(2)
-
-        #Conecting buttons
-        self.connect(self.btn_addGroup, QtCore.SIGNAL('clicked()'),
-                     self.toolBox.addTab)
-        self.connect(self.btn_removeGroup, QtCore.SIGNAL('clicked()'),
-                     self.toolBox.removeCurrentTab)
-#        self.connect(self.btn_editGroups, QtCore.SIGNAL('clicked()'),
-#                     lambda: PlotSettingsWindow(self, self.TernaryPlot,
-#                                                self.canvas).exec_())
+        #Creating TernaryData
+        self.ternaryData = TernaryData(short_labels, ternaryPlot, self.canvas)
 
         #Creating Dock Panel
-        pbox = QtGui.QVBoxLayout()
-        pbox.addLayout(bbox)
-        pbox.addWidget(self.toolBox)
-        pbox.setSpacing(10)
-        dock_w = QtGui.QWidget()
-        dock_w.setLayout(pbox)
-        dock_w.setMaximumWidth(270)
-        dock_w.setMinimumWidth(270)
+        groupsFrame = GroupsFrame(self.ternaryData)
         self.dock = QtGui.QDockWidget(self)
-        self.dock.setWidget(dock_w)
+        self.dock.setMaximumWidth(270)
+        self.dock.setMinimumWidth(270)
+        self.dock.setWidget(groupsFrame)
         self.addDockWidget(QtCore.Qt.DockWidgetArea(1), self.dock)
 
         #Creating main_frame
         mbox = QtGui.QHBoxLayout()
         mbox.addWidget(self.canvas)
-        self.main_frame.setLayout(mbox)
-        self.setCentralWidget(self.main_frame)
+        main_frame.setLayout(mbox)
+        self.setCentralWidget(main_frame)
 
     def __updateGroupPlot(self, index):
         '''Updates the plot for group in "index" position.'''
@@ -110,7 +68,7 @@ class PyTernary(QtGui.QMainWindow):
     def __getGroupData(self, index):
         '''Gets group data as a matrix (type: list).'''
         data = []
-        table = self.groups[index][0]        
+        table = self.groups[index][0]
         for row in range(table.rowCount()):
             try:
                 line = [float(table.item(row, col).text()) for col in range(3)]

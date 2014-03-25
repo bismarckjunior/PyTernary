@@ -6,6 +6,9 @@
 @brief:  Table of data for Ternary plot.
 """
 from PyQt4 import QtGui, QtCore
+from TernaryData import TernaryData
+from TernaryPlot import TernaryPlot
+import matplotlib.pyplot as plt
 import sys
 
 
@@ -35,13 +38,13 @@ class EditableHeaderMixin():
         self.line.blockSignals(False)
         self.line.setFocus()
         self.line.selectAll()
-        self.index = index
+        self.lindex = index
 
     def __doneEditing(self):
         self.line.blockSignals(True)
         self.line.setHidden(True)
         newHeader = str(self.line.text())
-        self.horizontalHeaderItem(self.index).setText(newHeader)
+        self.horizontalHeaderItem(self.lindex).setText(newHeader)
         self.line.setText('')
         self.setCurrentIndex(QtCore.QModelIndex())
 
@@ -58,7 +61,7 @@ class EditableHeaderMixin():
 
 
 class TableDataBase(QtGui.QTableWidget):
-    ROWHEIGHT = 25
+    ROWHEIGHT = 22
 
     def __init__(self, nrow, ncol, headerLabels, parent=None):
         super(TableDataBase, self).__init__(nrow, ncol, parent)
@@ -101,13 +104,12 @@ class TableDataBase(QtGui.QTableWidget):
             self.setRowHeight(row, self.ROWHEIGHT)
             self.setVerticalHeaderItem(row,
                                        QtGui.QTableWidgetItem('%02i' % (row+1)))
-        #self.setCurrentCell(row, 0)
 
     def updateRows(self):
         header = ['%02i' % (i+1) for i in range(self.rowCount())]
         self.setVerticalHeaderLabels(header)
         for i in range(self.rowCount()):
-            self.setRowHeight(i, self.ROWHEIGHT)
+            self.setRowHeight(i, self.ROWHEIGHT)        
 
     def __cellTableChanged(self, row, col):
         item = self.item(row, col)
@@ -168,14 +170,35 @@ class TableData(TableDataBase, EditableHeaderMixin):
 class TernaryTableData(TableData):
     ROWSUM = 100
 
-    def __init__(self, headerLabels, dataWidget=None, parent=None):
+    def __init__(self, ternaryData, parent=None):
+        headerLabels = ternaryData.headerTableLabels
+        self.ternaryData = ternaryData
+        self.index = self.ternaryData.add_group()
         super(TernaryTableData, self).__init__(1, 3, headerLabels, parent)
-        self.dataWidget = dataWidget
+        
+        self.data = []
 
         #Connections
         headers = self.horizontalHeader()
         headers.sectionDoubleClicked.connect(self.__changeHeaderItem)
         self.cellChanged.connect(self.__cellTableChanged)
+    
+    def updateRows(self):
+        TableData.updateRows(self)
+        data = []
+        for row in range(self.rowCount()):
+            d = []
+            for col in range(3):
+                try:
+                    d.append(float(self.item(row, col).text()))
+                except:
+                    break
+            else:
+                data.append(d)
+                
+        self.ternaryData.update_plot(self.index, data)
+        
+        self.ternaryData.draw()
 
     def __changeHeaderItem(self, index):
         #TODO: dataWidget
@@ -187,7 +210,7 @@ class TernaryTableData(TableData):
             item = self.item(row, i)
             value = float(item.text()) if item and item.text() else None
             line.append(value)
-
+        
         #Completing line
         if line.count(None) == 1:
             i = line.index(None)
@@ -201,12 +224,21 @@ class TernaryTableData(TableData):
                 item = QtGui.QTableWidgetItem(str(value))
                 self.setItem(row, i, item)
                 self.setCurrentCell(row, i)
+            line.insert(i, value)
+        if line.count(None) == 0 and line not in self.data:
+            #Ploting point
+            self.ternaryData.add_data(self.index, line)
+            self.data.append(line)
 
 
 class main(QtGui.QMainWindow):
     def __init__(self, parent=None):
         super(main, self).__init__(parent)
-        table = TernaryTableData(['A', 'B', 'C'])
+        #fig = plt.figure()
+        ternaryPlot = TernaryPlot()
+        
+        ternaryData = TernaryData(['A', 'B', 'C'], ternaryPlot, ternaryPlot.canvas)
+        table = TernaryTableData(ternaryData)
         box = QtGui.QVBoxLayout()
         box.addWidget(table)
         frame = QtGui.QFrame()
