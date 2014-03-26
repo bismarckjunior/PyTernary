@@ -7,6 +7,7 @@
 """
 from PyQt4 import QtGui, QtCore
 from TernaryTableData import TernaryTableData
+from PlotSettingsWindow import PlotSettingsWindow
 import sys
 
 
@@ -115,6 +116,7 @@ class GroupsToolBox(QtGui.QToolBox):
         super(GroupsToolBox, self).__init__(parent)
         self.ternaryData = ternaryData
         self.ternaryData.renameTableHeaders = self.renameTableHeaders
+        self.ternaryData.renameGroupHeader = self.setItemText
         self.setMaximumWidth(300)
         self.frames = []
         self.addTab()
@@ -135,10 +137,6 @@ class GroupsToolBox(QtGui.QToolBox):
     def removeCurrentTab(self):
         self.removeTab(self.currentIndex())
 
-    def renameTableHeaders(self, tableHeaders):
-        for frame in self.frames:
-            frame.table.setHorizontalHeaderLabels(tableHeaders)
-
     def removeTab(self, index):
         if self.count() == 1:
             self.removeItem(0)
@@ -153,6 +151,10 @@ class GroupsToolBox(QtGui.QToolBox):
         self.ternaryData.remove_group(frame.table.index)
         self.setCurrentIndex(index-1)
         #TODO: update_plot
+
+    def renameTableHeaders(self, tableHeaders):
+        for frame in self.frames:
+            frame.table.setHorizontalHeaderLabels(tableHeaders)
 
 
 class GroupsFrame(QtGui.QFrame):
@@ -178,14 +180,16 @@ class GroupsFrame(QtGui.QFrame):
         self.connect(btn_addGroup, QtCore.SIGNAL('clicked()'), toolBox.addTab)
         self.connect(btn_delGroup, QtCore.SIGNAL('clicked()'),
                      toolBox.removeCurrentTab)
-        def fun():
-            #ternaryData.plot_data([30,30,40])
-            ternaryData.add_data(0, [20, 20, 60])
-            #ternaryData.set_legend_visibility(0, True)
-            #ternaryData.draw()
-            
         self.connect(btn_setPlot, QtCore.SIGNAL('clicked()'),
-                     fun )
+                     lambda: PlotSettingsWindow(ternaryData, self).exec_())
+#        def fun():
+#            #ternaryData.plot_data([30,30,40])
+#            ternaryData.add_data(0, [20, 20, 60])
+#            #ternaryData.set_legend_visibility(0, True)
+#            #ternaryData.draw()
+#            
+#        self.connect(btn_setPlot, QtCore.SIGNAL('clicked()'),
+#                     fun )
         #TODO: edit_plot
         #self.connect(btn_setPlot, QtCore.SIGNAL('clicked()'), pass)
 #        self.connect(self.btn_editGroups, QtCore.SIGNAL('clicked()'),

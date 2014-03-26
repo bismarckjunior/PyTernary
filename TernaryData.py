@@ -13,7 +13,7 @@ import numpy as np
 
 
 class TernaryData():
-    def __init__(self, headerLabels, ternaryPlot,  canvas):
+    def __init__(self, headerLabels, ternaryPlot, canvas):
         self.ternaryPlot = ternaryPlot
         self.canvas = canvas
         self.headerTableLabels = headerLabels
@@ -21,10 +21,6 @@ class TernaryData():
 
     def draw(self):
         self.canvas.draw()
-
-    def plot_data(self, data):
-        self.ternaryPlot.plot_data(data)
-        self.draw()
 
     def add_group(self):
         index = self.ternaryPlot.add_null_plot()
@@ -46,7 +42,7 @@ class TernaryData():
         self.draw()
 
     def update_properties(self, index, **kw):
-        self.ternaryPlot.change_properties(index, kw)
+        self.ternaryPlot.change_properties(index, **kw)
         self.draw()
 
     def update_plot(self, index, data, **kw):
@@ -60,6 +56,17 @@ class TernaryData():
     def set_legend_visibility(self, index, toggle):
         self.ternaryPlot.set_legend_visibility(index, toggle)
         self.draw()
+        
+    def get_plot_visibility(self, index):
+        return self.ternaryPlot.get_plot_visibility(index)
+    
+    def get_legend_visibility(self, index):
+        return self.ternaryPlot.get_legend_visibility(index)
+
+    def get_plot_properties(self, index):
+        if index in self.groups:
+            return self.ternaryPlot.get_properties(index)
+        return False
 
 
 if __name__ == '__main__':
