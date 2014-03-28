@@ -198,9 +198,10 @@ class TernaryTableData(TableData):
                     break
             else:
                 data.append(d)
-                
-        self.ternaryData.update_plot(self.index, data)
         
+        self.ternaryData.update_plot(self.index, data)
+        if not data:
+            self.ternaryData.set_legend_visibility(self.index, False)
         self.ternaryData.draw()
 
     def __changeHeaderItem(self, index):

@@ -11,6 +11,7 @@ from PyQt4.QtGui import QColor
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import numpy as np
+import copy as cp
 
 
 class TernaryAxis():
@@ -347,8 +348,10 @@ class TernaryPlot():
 ##            self.legends_labels.pop(index)
 #            self.legends_visible.pop(index)
         try:
+            self.set_legend_visibility(index, False)
             self.plots[index][0].remove()
             self.colors = self.properties[index]['color'] + self.colors
+
             if index in self.templates:
                 self.templates.remove(index)
             if index == len(self.plots)-1:
@@ -381,9 +384,9 @@ class TernaryPlot():
     def get_properties(self, index, key=None):
         '''Gets plot properties.'''
         if key:
-            return self.properties[index][key]
+            return cp.copy(self.properties[index][key])
         else:
-            return self.properties[index]
+            return cp.copy(self.properties[index])
     
     def change_properties(self, index, **kw):
         '''Changes properties plot.'''

@@ -29,16 +29,18 @@ class GroupsSettingsTable(QtGui.QTableWidget):
         
         #Connections
         self.cellClicked.connect(self.__setCellColor)
-        self.cellChanged.connect(self.__update_properties)
+        self.cellChanged.connect(self.__groupLabel_action)
 
     def addRows(self):
         self.frmColor = []      # Frames for color
-        self.chkBoxPlot = []    # Checkboxes for plots
-        self.chkBoxLegend = []  # Checkboxes for legends
         self.new_props = {}     # New properties for plot
         self.legends = []       # List of bools for legends plot
-        
-        
+
+        self.signalMapperComboBox = QtCore.QSignalMapper()
+        self.signalMapperSpinBox = QtCore.QSignalMapper()
+        self.signalMapperPlot = QtCore.QSignalMapper()
+        self.signalMapperLegend = QtCore.QSignalMapper()
+
         for row, index in enumerate(self.ternaryData.groups):
             self.insertRow(row)
             self.setRowHeight(row, self.ROWHEIGHT)
@@ -55,30 +57,32 @@ class GroupsSettingsTable(QtGui.QTableWidget):
             self.frmColor.append(QtGui.QFrame())
             self.frmColor[-1].setStyleSheet("QWidget {background-color: %s}" % color.name())
             self.setCellWidget(row, 1, self.frmColor[-1])
-            
+
             #Marker
             comboBox = QtGui.QComboBox()
             comboBox.addItems(self.markers)
             comboBox.setCurrentIndex(self.markers.index(props['marker']))
-            comboBox.currentIndexChanged.connect(lambda: self.setItem(row, 2, QtGui.QTableWidgetItem(comboBox.currentText())))
+            comboBox.currentIndexChanged.connect(self.signalMapperComboBox.map)
+            self.signalMapperComboBox.setMapping(comboBox, row)
             self.setCellWidget(row, 2, comboBox)
-            
+
             #Marker size
             sbox = QtGui.QSpinBox()
             sbox.setValue(props['markersize'])
             sbox.setMinimum(1)
             sbox.setMaximum(30)
-            sbox.valueChanged.connect(lambda: self.setItem(row, 3, QtGui.QTableWidgetItem(str(sbox.value()))))
+            sbox.valueChanged.connect(self.signalMapperSpinBox.map)
+            self.signalMapperSpinBox.setMapping(sbox, row)
             self.setCellWidget(row, 3, sbox)
-            
+
             #Plot
             chkValue = props['visible']
             frame = QtGui.QFrame()
-            frame.setStyleSheet("QWidget {background-color: white}" )
+            frame.setStyleSheet("QWidget {background-color: white}")
             chkBoxPlot = QtGui.QCheckBox('')
             chkBoxPlot.setCheckState(QtCore.Qt.Checked if chkValue else QtCore.Qt.Unchecked)
-            chkBoxPlot.clicked.connect(lambda: self.setItem(row, 4, QtGui.QTableWidgetItem(str(chkBoxPlot.isChecked()))))
-            self.chkBoxPlot.append(chkBoxPlot)
+            chkBoxPlot.clicked.connect(self.signalMapperPlot.map)
+            self.signalMapperPlot.setMapping(chkBoxPlot, row)
             hbox = QtGui.QHBoxLayout()
             hbox.addStretch(1)
             hbox.addWidget(chkBoxPlot)
@@ -86,16 +90,16 @@ class GroupsSettingsTable(QtGui.QTableWidget):
             hbox.setMargin(2)
             frame.setLayout(hbox)
             self.setCellWidget(row, 4, frame)
-            
+
             #Legend
             chkValue = self.ternaryData.get_legend_visibility(index)
             self.legends.append(chkValue)
             frame = QtGui.QFrame()
-            frame.setStyleSheet("QWidget {background-color: white}" )
+            frame.setStyleSheet("QWidget {background-color: white}")
             chkBoxLegend = QtGui.QCheckBox('')
             chkBoxLegend.setCheckState(QtCore.Qt.Checked if chkValue else QtCore.Qt.Unchecked)
-            chkBoxLegend.clicked.connect(lambda: self.setItem(row, 5, QtGui.QTableWidgetItem(str(chkBoxLegend.isChecked()))))
-            self.chkBoxLegend.append(chkBoxLegend)
+            chkBoxLegend.clicked.connect(self.signalMapperLegend.map)
+            self.signalMapperLegend.setMapping(chkBoxLegend, row)
             hbox = QtGui.QHBoxLayout()
             hbox.addStretch(1)
             hbox.addWidget(chkBoxLegend)
@@ -104,36 +108,45 @@ class GroupsSettingsTable(QtGui.QTableWidget):
             frame.setLayout(hbox)
             self.setCellWidget(row, 5, frame)
 
-    def __update_properties(self, row, col):
-        index = self.ternaryData.groups[row]
-        self.new_props[row] = self.ternaryData.get_plot_properties(index)
+        self.signalMapperComboBox.mapped.connect(self.__comboBox_action)
+        self.signalMapperSpinBox.mapped.connect(self.__spinBox_action)
+        self.signalMapperPlot.mapped.connect(self.__checkBox_plot_action)
+        self.signalMapperLegend.mapped.connect(self.__checkBox_legend_action)
 
+    def __groupLabel_action(self, row, col):
         value = str(self.item(row, col).text())
-        if col == 0:
-            self.new_props[row]['label'] = value
-        elif col == 1:
-            self.new_props[row]['color'] = value
-        elif col == 2:
-            self.new_props[row]['marker'] = value
-        elif col == 3:
-            self.new_props[row]['markersize'] = float(value)
-        elif col == 4:
-            if 'False' == value:
-                self.new_props[row]['visible'] = False
-            else:
-                self.new_props[row]['visible'] = True
-        elif col == 5:
-            if 'False' == value:
-                self.legends[row] = False
-            else:
-                self.legends[row] = True
+        self.set_new_props(row, 'label', value)
+
+    def __comboBox_action(self, row):
+        comboBox = self.signalMapperComboBox.mapping(row)
+        self.set_new_props(row, 'marker', str(comboBox.currentText()))
+
+    def __spinBox_action(self, row):
+        spinBox = self.signalMapperSpinBox.mapping(row)
+        self.set_new_props(row, 'markersize', float(spinBox.value()))
+
+    def __checkBox_legend_action(self, row):
+        checkBox = self.signalMapperLegend.mapping(row)
+        self.legends[row] = checkBox.isChecked()
+        self.set_new_props(row)
+
+    def __checkBox_plot_action(self, row):
+        checkBox = self.signalMapperPlot.mapping(row)
+        self.set_new_props(row, 'visible', checkBox.isChecked())
 
     def __setCellColor(self, row, col):
         if col == 1:
             color = QtGui.QColorDialog.getColor()
             if color.isValid():
                 self.frmColor[row].setStyleSheet("QWidget {background-color: %s}" % color.name())
-                self.setItem(row, col, QtGui.QTableWidgetItem(color.name()))
+                self.set_new_props(row, 'color', str(color.name()))
+
+    def set_new_props(self, row, key=None, value=None):
+        if row not in self.new_props:
+            index = self.ternaryData.groups[row]
+            self.new_props[row] = self.ternaryData.get_plot_properties(index)
+        if key and value:
+            self.new_props[row][key] = value
 
 
 class PlotSettingsWindow(QtGui.QDialog):
@@ -156,8 +169,7 @@ class PlotSettingsWindow(QtGui.QDialog):
         hbox.addWidget(btn_cancel)
 
         #Conecting
-        self.connect(btn_ok, QtCore.SIGNAL('clicked()'),
-                     self.__okAction)
+        self.connect(btn_ok, QtCore.SIGNAL('clicked()'), self.__okAction)
         self.connect(btn_cancel, QtCore.SIGNAL('clicked()'),
                      self.__cancelAction)
 
@@ -167,7 +179,7 @@ class PlotSettingsWindow(QtGui.QDialog):
         mbox.addLayout(hbox)
         self.setLayout(mbox)
         self.setGeometry(QtCore.QRect(10, 50, 490, 350))
-    
+
     def __cancelAction(self):
         self.reject()
     
@@ -186,6 +198,7 @@ if __name__ == '__main__':
     from TernaryPlot import TernaryPlot
     ternaryPlot = TernaryPlot()
     TD = TernaryData(['S', 'D', 'E'], ternaryPlot, 3)
+    TD.add_group()
     TD.add_group()
     app = QtGui.QApplication(sys.argv)
     main = PlotSettingsWindow(TD)
