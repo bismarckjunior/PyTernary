@@ -129,10 +129,18 @@ class GroupsSettingsTable(QtGui.QTableWidget):
         checkBox = self.signalMapperLegend.mapping(row)
         self.legends[row] = checkBox.isChecked()
         self.set_new_props(row)
+        if checkBox.isChecked():
+            checkBox_plot = self.signalMapperPlot.mapping(row)
+            checkBox_plot.setCheckState(QtCore.Qt.Checked)
+            self.set_new_props(row, 'visible', True)
 
     def __checkBox_plot_action(self, row):
         checkBox = self.signalMapperPlot.mapping(row)
         self.set_new_props(row, 'visible', checkBox.isChecked())
+        if not checkBox.isChecked():
+            checkBox_legend = self.signalMapperLegend.mapping(row)
+            checkBox_legend.setCheckState(QtCore.Qt.Unchecked)
+            self.legends[row] = False
 
     def __setCellColor(self, row, col):
         if col == 1:
@@ -145,7 +153,7 @@ class GroupsSettingsTable(QtGui.QTableWidget):
         if row not in self.new_props:
             index = self.ternaryData.groups[row]
             self.new_props[row] = self.ternaryData.get_plot_properties(index)
-        if key and value:
+        if key:
             self.new_props[row][key] = value
 
 
@@ -186,9 +194,10 @@ class PlotSettingsWindow(QtGui.QDialog):
     def __okAction(self):
         for key, props in self.groupsTable.new_props.items():
             index = self.ternaryData.groups[key]
-            self.ternaryData.update_properties(index, **props)
+            
             legend = self.groupsTable.legends[key]
             self.ternaryData.set_legend_visibility(index, legend)
+            self.ternaryData.update_properties(index, **props)
             self.ternaryData.renameGroupHeader(index, props['label'])
         self.accept()
 
@@ -199,7 +208,9 @@ if __name__ == '__main__':
     ternaryPlot = TernaryPlot()
     TD = TernaryData(['S', 'D', 'E'], ternaryPlot, 3)
     TD.add_group()
+    #TD.remove_group(0)
     TD.add_group()
+    print TD.groups
     app = QtGui.QApplication(sys.argv)
     main = PlotSettingsWindow(TD)
     main.show()

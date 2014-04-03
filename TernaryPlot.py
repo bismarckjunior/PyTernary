@@ -253,6 +253,10 @@ class TernaryPlot():
             self.fig = fig
         else:
             self.fig = plt.figure()
+            
+        mngr = plt.get_current_fig_manager()
+        # to put it into the upper left corner for example:
+        mngr.window.setGeometry(50,100,640, 545)
 
         #Clearing plot
         self.clear_plot()
@@ -347,25 +351,24 @@ class TernaryPlot():
 #            self.colors = self.properties.pop(index)['color'] + self.colors
 ##            self.legends_labels.pop(index)
 #            self.legends_visible.pop(index)
-        try:
-            self.set_legend_visibility(index, False)
-            self.plots[index][0].remove()
-            self.colors = self.properties[index]['color'] + self.colors
+        if index >= len(self.plots):
+            return
+        self.set_legend_visibility(index, False)
+        #self.plots[index][0].set_visible(False)
+        self.plots[index][0].remove()
+        self.colors = [self.properties[index]['color']] + self.colors
 
-            if index in self.templates:
-                self.templates.remove(index)
-            if index == len(self.plots)-1:
-                self.plots.pop()
-                self.properties.pop()
-                self.legends_visible.pop()
-            else:
-                self.plots[index] = []
-                self.properties[index] = []
-                self.legends_visible[index] = False
-            
-        except:
-            pass
-        
+        if index in self.templates:
+            self.templates.remove(index)
+        if index == len(self.plots)-1:
+            self.plots.pop()
+            self.properties.pop()
+            self.legends_visible.pop()
+        else:
+            self.plots[index] = []
+            self.properties[index] = []
+            self.legends_visible[index] = False
+
     def remove_data(self, index, data):
         x_plot = self.plots[index][0].get_xdata()
         y_plot = self.plots[index][0].get_ydata()
@@ -537,31 +540,38 @@ class TernaryPlot():
     def legend(self, labels=None):
         '''Plots the legend.'''
         if labels:
-#            self.legends_labels = labels
+            self.legends_labels = labels
             for i, label in enumerate(labels):
                 self.properties[i]['label'] = label
                 self.plots[i][0].set_label(label)
             labels = labels + self.legends_labels()[len(labels):]
         else:
             labels = self.legends_labels()
-        n = len(labels) if len(labels) < 13 else 13
+#        n = len(labels) if len(labels) < 13 else 13
         
         lines, labels_ = [], []
         lines_template, labels_template = [], []
-        for i in range(len(self.plots)):
-            line = self.plots[i]
-            label = labels[i]
-            b = self.legends_visible[i]
+        for index in range(len(self.plots)):
+            line = self.plots[index]
+            label = labels[index]
+            b = self.legends_visible[index]
             if line and label and b:
-                if i in self.templates:
+                if not self.plots[index][0].get_xdata().any():
+                    self.legends_visible[index] = False
+                    continue
+                if index in self.templates:
                     lines_template.append(line[0])
                     labels_template.append(label)
                 else:
                     lines.append(line[0])
                     labels_.append(label)
-        if lines:
-            self.legends = self.ax.legend(lines+lines_template, labels_+labels_template, loc=2,
+        total_lines = lines+lines_template
+        n = len(total_lines) if len(total_lines) < 13 else 13
+        if total_lines:
+            self.legends = self.ax.legend(total_lines, labels_+labels_template, loc=2,
                        numpoints=1, bbox_to_anchor=(0.70+0.03*n, .2, 1.2, 0.75))
+        elif hasattr(self, 'legends'):
+            self.legends.set_visible(False)
 
     def grid(self, toggle=None, **kw):
         '''Plots or removes the grids.'''
@@ -689,19 +699,23 @@ class TernaryPlot():
 if __name__=='__main__':
     fig = plt.figure()       
     T = TernaryPlot(fig, 'Ternary Plot', ['Big A', 'Big B', 'Big C'], ['A','B','C'])
-
+    #print dir(fig)
+    ax= fig._get_axes()
+    
     data = [ [10,20,70], [20,25,55], [0.5,0.2,0.3]]
     group1 = T.plot_data(data, color='green', label='Texto1')
     group2 = T.plot_data([[60,10,30],[25,5,70]])
     T1 = T.plot_template(data+[[40,50,10]],'fill', hatch='/', fill=False, edgecolor='k', color='c')
-    #T.legend()
+    T.legend()
     #T.legend(['Sample 1', 'Sample 2'])
     #T.set_plot_visibility(group1, False)
     #T.set_plot_visibility(group2, True)
     #T.clear_plot(T1)
     #T.inverse()
     #T.update_plot(0, [], color='k', markersize=10, marker='o')
-
+    #T.remove_plot(group2)
+    T.set_legend_visibility(group1, False)
+    #print dir(leg.texts[0])
     T.show()
 
     

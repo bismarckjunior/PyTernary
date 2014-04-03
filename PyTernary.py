@@ -4,6 +4,8 @@
 @date:   Sat Mar 15 09:30:52 2014
 @email:  bismarckjunior@outlook.com
 @brief:  PyTernary is a GUI to plot a Ternary graph. 
+
+#TODO:
 """
 from PyQt4 import QtGui, QtCore
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas

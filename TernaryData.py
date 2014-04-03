@@ -98,6 +98,7 @@ if __name__ == '__main__':
     T.add_data(group4, [30,30,40])
     T.add_data(group4, [30,30,40])
     T.add_data(group4, [30,30,40])
+    T.remove_plot(group2)
     T.show()
     
 #    import matplotlib.pyplot as plt

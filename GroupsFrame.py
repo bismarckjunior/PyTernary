@@ -177,11 +177,11 @@ class GroupsFrame(QtGui.QFrame):
         btn_setPlot.setToolTip('Edit plot settings')
 
         #Conecting buttons
-        self.connect(btn_addGroup, QtCore.SIGNAL('clicked()'), toolBox.addTab)
-        self.connect(btn_delGroup, QtCore.SIGNAL('clicked()'),
-                     toolBox.removeCurrentTab)
-        self.connect(btn_setPlot, QtCore.SIGNAL('clicked()'),
-                     lambda: PlotSettingsWindow(ternaryData, self).exec_())
+        btn_addGroup.clicked.connect(toolBox.addTab)
+        btn_delGroup.clicked.connect(toolBox.removeCurrentTab)
+        btn_setPlot.clicked.connect(lambda: PlotSettingsWindow(ternaryData, self).exec_())
+#        btn_setPlot.clicked.connect(lambda: ternaryData.set_legend_visibility(0, False))
+#        btn_delGroup.clicked.connect(lambda: ternaryData.set_legend_visibility(0, True))
 #        def fun():
 #            #ternaryData.plot_data([30,30,40])
 #            ternaryData.add_data(0, [20, 20, 60])
