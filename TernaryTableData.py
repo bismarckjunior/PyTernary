@@ -230,9 +230,14 @@ class TernaryTableData(TableData):
                 self.setCurrentCell(row, i)
             line.insert(i, value)
         if line.count(None) == 0 and line not in self.data:
+            #Removing old line
+            while(row >= len(self.data)):
+                self.data.append([])
+            if self.data[row]:
+                self.ternaryData.remove_data(self.index, self.data[row])
             #Ploting point
             self.ternaryData.add_data(self.index, line)
-            self.data.append(line)
+            self.data[row] = line
 
 
 class main(QtGui.QMainWindow):

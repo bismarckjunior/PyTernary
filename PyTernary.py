@@ -7,7 +7,7 @@
 
 #TODO:
     * Mudar posiçao do ternarySettingsFrame
-    * Acrescenta tamanho da fonte
+    * Mudar posicao tamanho da fonte
     * grupos da tabela e do plot diferentes
         - Adicione grupo 2 e 3
         - Remova o grupo 2, 1 e 3 

@@ -8,10 +8,12 @@
 from __future__ import division
 from scipy import interpolate
 from PyQt4.QtGui import QColor
+#from TernaryAxis import TernaryAxis
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import numpy as np
 import copy as cp
+
 
 
 class TernaryAxis():
@@ -243,6 +245,10 @@ class TernaryAxis():
             if not (abs(a-x)<1E-3 and abs(b-y)<1E-3 ) and 0<=a<=1 and 0<=b<=1:
                 return (a, b)                
         return (a, b)
+        
+    def set_ticks_visibility(self, visibility):
+        for tick in self.plots['ticks']:
+            tick[0].set_visible(visibility)
 
 
 class TernaryPlot():
@@ -269,6 +275,7 @@ class TernaryPlot():
         self.inverseOn = False
         self.min_maxOn = True
         self.gridOn = True
+        self.ticks_visibility = True
         self.plots = []
         self.properties = []
         self.short_labels_plot = []
@@ -280,12 +287,11 @@ class TernaryPlot():
         self.title = title
         self.main_labels = main_labels
         self.short_labels = short_labels
-        if title:
-            self.set_title(title, fontsize=21)
+        self.set_title(title, fontsize=20)
         if main_labels:
-            self.set_main_labels(main_labels, fontsize=13)
+            self.set_main_labels(main_labels, fontsize=15)
         if short_labels:
-            self.set_short_labels(short_labels, d=0.98, fontsize=16)
+            self.set_short_labels(short_labels, d=0.98, fontsize=15)
             self.show_min_max(False)
 
     def __set_colors(self):
@@ -406,12 +412,12 @@ class TernaryPlot():
     def set_title(self, title, **kw):
         '''Sets title.'''
         self.title = title
-        self.__ax.set_title(title, **kw)
+        self.ttitle = self.__ax.set_title(title, **kw)
 
     def set_main_labels(self, labels, **kw):
         '''Sets main labels.'''
         for i, ax in enumerate(self.axes):
-            ax.set_label(labels[i], **kw)
+            ax.set_label(str(labels[i]).strip(), **kw)
 
     def set_short_labels(self, labels, d=0.98, **kw):
         '''Sets the label on the  edges of the triangle.'''
@@ -432,7 +438,8 @@ class TernaryPlot():
             kw['fontsize'] = 16
 
         for i, xy in enumerate(locations):
-            short_label = self.__ax.text(xy[0], xy[1], labels[i], ha=has[i], va=vas[i], **kw)
+            short_label = self.__ax.text(xy[0], xy[1], labels[i],
+                                         ha=has[i], va=vas[i], **kw)
             self.short_labels_plot.append(short_label)
 
     def transform_points(self, data):
@@ -494,6 +501,11 @@ class TernaryPlot():
         kw = self.__generate_properties(**kw)
         self.plots.append(plt.plot([],[], **kw))
         return len(self.plots)-1
+    
+    def set_ticks_visibility(self, visibility):
+        self.ticks_visibility = visibility
+        for ax in self.axes:
+            ax.set_ticks_visibility(visibility)
 
     def update_axes(self):
         '''Updates axes and data.'''
@@ -717,7 +729,8 @@ if __name__=='__main__':
     #T.inverse()
     #T.update_plot(0, [], color='k', markersize=10, marker='o')
     #T.remove_plot(group2)
-    T.set_legend_visibility(group1, False)
+    T.set_ticks_visibility(False)
+    T.set_ticks_visibility(True)
     #print dir(leg.texts[0])
     T.show()
 

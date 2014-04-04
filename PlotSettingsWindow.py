@@ -14,7 +14,7 @@ class TernarySettingsFrame(QtGui.QFrame):
     def __init__(self, ternaryData, parent=None):
         super(TernarySettingsFrame, self).__init__(parent)
         self.ternaryData = ternaryData
-        self.new_props = {}
+        self.vars2update = []
         self.create_frame()
         self.set_connections()
 
@@ -27,6 +27,11 @@ class TernarySettingsFrame(QtGui.QFrame):
         self.le_title = QtGui.QLineEdit()
         self.le_shortLabels = [QtGui.QLineEdit() for i in range(3)]
         self.le_mainLabels = [QtGui.QLineEdit() for i in range(3)]
+
+        #Spinboxes
+        self.sb_title = QtGui.QSpinBox()    
+        self.sb_shortLabels = QtGui.QSpinBox()
+        self.sb_mainLabels = QtGui.QSpinBox()
 
         #Checkboxes
         self.cb_inv = QtGui.QCheckBox()
@@ -56,6 +61,20 @@ class TernarySettingsFrame(QtGui.QFrame):
             self.le_shortLabels[i].setText(shortLabels[i])
             self.le_mainLabels[i].setText(mainLabels[i])
 
+        #Editing spinboxes
+        TP = self.ternaryData.ternaryPlot
+        fontsizes = []
+        for plot in [TP.ttitle, TP.short_labels_plot[0],
+                     TP.axes[0].plots['label']]:
+            if plot:
+                font_props = plot.properties()['fontproperties']
+                fontsizes.append(int(font_props.get_size_in_points()))
+            else:
+                fontsizes.append(15)
+        self.sb_title.setValue(fontsizes.pop(0))
+        self.sb_shortLabels.setValue(fontsizes.pop(0))
+        self.sb_mainLabels.setValue(fontsizes.pop(0))
+
         #Editing checkboxes
         self.cb_inv.setText('Inverse')
         self.cb_perc.setText('Percentage')
@@ -66,12 +85,15 @@ class TernarySettingsFrame(QtGui.QFrame):
         #Editing horizontal boxes
         hbox_title.addWidget(l_title)
         hbox_title.addWidget(self.le_title)
+        hbox_title.addWidget(self.sb_title)
         vbox_labels.addLayout(hbox_title)
         for i in range(3):
             hbox_axesLabel[i].addWidget(l_axesLabel[i])
             hbox_axesLabel[i].addWidget(self.le_shortLabels[i])
             hbox_axesLabel[i].addWidget(self.le_mainLabels[i])
             vbox_labels.addLayout(hbox_axesLabel[i])
+        vbox_labels.addWidget(self.sb_shortLabels)
+        vbox_labels.addWidget(self.sb_mainLabels)
         hbox_checkboxes.addSpacing(10)
         hbox_checkboxes.addWidget(self.cb_inv)
         hbox_checkboxes.addWidget(self.cb_perc)
@@ -104,7 +126,7 @@ class TernarySettingsFrame(QtGui.QFrame):
             self.cb_grid.setCheckState(QtCore.Qt.Unchecked)
 
         #Editing ticks checkbox
-        if self.ternaryData.ternaryPlot.axes[0].plots['ticks']:
+        if self.ternaryData.ternaryPlot.ticks_visibility:
             self.cb_ticks.setCheckState(QtCore.Qt.Checked)
         else:
             self.cb_ticks.setCheckState(QtCore.Qt.Unchecked)
@@ -122,12 +144,17 @@ class TernarySettingsFrame(QtGui.QFrame):
 
     def set_connections(self):
         #Lines edit connection
-        self.le_title.textChanged.connect(lambda t: self.set_data('title', t))
+        self.le_title.editingFinished.connect(lambda: self.set_data('title'))
         for i in range(3):
-            self.le_shortLabels[i].textChanged.connect(lambda l: 
-                self.set_data('short_label'))
-            self.le_mainLabels[i].textChanged.connect(lambda l: 
+            self.le_shortLabels[i].editingFinished.connect(lambda: 
+                self.set_data('short_labels'))
+            self.le_mainLabels[i].editingFinished.connect(lambda: 
                 self.set_data('main_labels'))
+        
+        #Spinboxes connection
+        self.sb_title.valueChanged.connect(lambda: self.set_data('title'))
+        self.sb_shortLabels.valueChanged.connect(lambda: self.set_data('short_labels'))
+        self.sb_mainLabels.valueChanged.connect(lambda: self.set_data('main_labels'))
         
         #Checkboxes connection
         self.cb_inv.clicked.connect(lambda: self.set_data('inverse'))
@@ -135,36 +162,72 @@ class TernarySettingsFrame(QtGui.QFrame):
         self.cb_min_max.clicked.connect(lambda: self.set_data('min_max'))
         self.cb_grid.clicked.connect(lambda: self.set_data('grid'))
         self.cb_ticks.clicked.connect(lambda: self.set_data('ticks'))
-    
-    def set_data(self, key, value=''):
-        ternaryPlot = self.ternaryData.ternaryPlot
-        if key == 'title':
-            self.new_props[ternaryPlot.set_title] = value.strip()
-        elif key == 'short_label':
-            short_labels = [le.text() for le in self.le_shortLabels]
-            self.new_props[ternaryPlot.set_short_labels] = short_labels
-        elif key == 'main_label':
-            main_labels = [le.text() for le in self.le_mainLabels]
-            self.new_props[ternaryPlot.set_main_labels] = main_labels
-        elif key == 'inverse':
-            inverse = self.cb_inv.isChecked()
-            self.new_props[self.ternaryData.set_inverse] = inverse
-        elif key == 'percentage':
-            percentage = self.cb_perc.isChecked()
-            self.new_props[ternaryPlot.percentage] = percentage
-        elif key == 'min_max':
-            min_max = self.cb_min_max.isChecked()
-            self.new_props[ternaryPlot.show_min_max] = min_max
-        elif key == 'grid':
-            grid = self.cb_grid.isChecked()
-            self.new_props[ternaryPlot.grid] = grid
-        elif key == 'ticks':
-            ticks = self.cb_ticks.isChecked()
-            self.new_props[self.ternaryData.set_ticks] = ticks
+
+    def set_data(self, var):
+        if var not in self.vars2update:
+            self.vars2update.append(var)
+#        if key == 'title':
+#            d = {'title': self.le_title.text().trimmed(),
+#                 'fontsize': self.sb_title.value()}
+#            self.new_props[d] = ternaryPlot.set_title
+#        elif key == 'short_labels':
+#            short_labels = [le.text().trimmed() for le in self.le_shortLabels]
+#            self.new_props[ternaryPlot.set_short_labels] = short_labels
+#        elif key == 'main_labels':
+#            main_labels = [le.text().trimmed() for le in self.le_mainLabels]
+#            self.new_props[ternaryPlot.set_main_labels] = main_labels
+#        elif key == 'inverse':
+#            inverse = self.cb_inv.isChecked()
+#            self.new_props[self.ternaryData.set_inverse] = inverse
+#        elif key == 'percentage':
+#            percentage = self.cb_perc.isChecked()
+#            self.new_props[ternaryPlot.percentage] = percentage
+#        elif key == 'min_max':
+#            min_max = self.cb_min_max.isChecked()
+#            self.new_props[ternaryPlot.show_min_max] = min_max
+#        elif key == 'grid':
+#            grid = self.cb_grid.isChecked()
+#            self.new_props[ternaryPlot.grid] = grid
+#        elif key == 'ticks':
+#            ticks = self.cb_ticks.isChecked()
+#            self.new_props[ternaryPlot.set_ticks_visibility] = ticks
+        
+        
     
     def apply_new_props(self):
-        for fun, value in self.new_props.items():
-            fun(value)        
+#        for fun, value in self.new_props.items():
+#            if type(fun) == dict:
+#                value(**fun)
+#            else:
+#                fun(value)     
+        ternaryPlot = self.ternaryData.ternaryPlot
+        if 'title' in self.vars2update:
+            title = self.le_title.text()
+            fontsize = self.sb_title.value()
+            ternaryPlot.set_title(title, fontsize=fontsize)
+        if 'short_labels' in self.vars2update:
+            short_labels = [le.text().trimmed() for le in self.le_shortLabels]
+            fontsize = self.sb_shortLabels.value()
+            ternaryPlot.set_short_labels(short_labels, fontsize=fontsize)
+        if 'main_labels' in self.vars2update:
+            main_labels = [le.text().trimmed() for le in self.le_mainLabels]
+            fontsize = self.sb_mainLabels.value()
+            ternaryPlot.set_main_labels(main_labels, fontsize=fontsize)
+        if 'inverse' in self.vars2update:
+            inverse = self.cb_inv.isChecked()
+            self.ternaryData.set_inverse(inverse)
+        if 'percentage' in self.vars2update:
+            percentage = self.cb_perc.isChecked()
+            ternaryPlot.percentage(percentage)
+        if 'min_max' in self.vars2update:
+            min_max = self.cb_min_max.isChecked()
+            ternaryPlot.show_min_max(min_max)
+        if 'grid' in self.vars2update:
+            grid = self.cb_grid.isChecked()
+            ternaryPlot.grid(grid)
+        if 'ticks' in self.vars2update:
+            ticks = self.cb_ticks.isChecked()
+            ternaryPlot.set_ticks_visibility(ticks)
 
 
 class GroupsSettingsTable(QtGui.QTableWidget):
