@@ -9,7 +9,6 @@
             - groups: list of lines
 """
 from TernaryPlot import TernaryPlot
-import numpy as np
 
 
 class TernaryData():
@@ -56,6 +55,10 @@ class TernaryData():
     def set_legend_visibility(self, index, toggle):
         self.ternaryPlot.set_legend_visibility(index, toggle)
         self.draw()
+         
+    def set_inverse(self, value):
+        if self.ternaryPlot.inverseOn != value:
+            self.ternaryPlot.inverse()
         
     def get_plot_visibility(self, index):
         return self.ternaryPlot.get_plot_visibility(index)
@@ -67,6 +70,21 @@ class TernaryData():
         if index in self.groups:
             return self.ternaryPlot.get_properties(index)
         return False
+    
+    def get_title(self):
+        return self.ternaryPlot.title
+    
+    def get_short_labels(self):
+        short_labels = self.ternaryPlot.short_labels
+        if not short_labels:
+            short_labels = ['', '', '']
+        return short_labels
+    
+    def get_main_labels(self):
+        main_labels = self.ternaryPlot.main_labels
+        if not main_labels:
+            main_labels = ['', '', '']
+        return main_labels
 
 
 if __name__ == '__main__':
@@ -102,6 +120,7 @@ if __name__ == '__main__':
     T.show()
     
 #    import matplotlib.pyplot as plt
+#    import numpy as np
 #    plt.figure()
 #    p = plt.plot(range(4))
 #    print p[0].get_data()

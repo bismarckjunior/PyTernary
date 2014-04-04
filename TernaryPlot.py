@@ -405,6 +405,7 @@ class TernaryPlot():
 
     def set_title(self, title, **kw):
         '''Sets title.'''
+        self.title = title
         self.__ax.set_title(title, **kw)
 
     def set_main_labels(self, labels, **kw):
@@ -523,7 +524,8 @@ class TernaryPlot():
         else:
             for index in range(len(self.plots)):
                 props = self.properties[index]
-                self.plots[index][0].update(props)
+                if self.plots[index][0]:
+                    self.plots[index][0].update(props)
 #        self.legend(self.legends_labels)
         self.legend()
         self.draw()
@@ -707,6 +709,7 @@ if __name__=='__main__':
     group2 = T.plot_data([[60,10,30],[25,5,70]])
     T1 = T.plot_template(data+[[40,50,10]],'fill', hatch='/', fill=False, edgecolor='k', color='c')
     T.legend()
+    #T.set_title('Ok')
     #T.legend(['Sample 1', 'Sample 2'])
     #T.set_plot_visibility(group1, False)
     #T.set_plot_visibility(group2, True)
