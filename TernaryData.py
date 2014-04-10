@@ -19,7 +19,10 @@ class TernaryData():
         self.groups = []
 
     def draw(self):
-        self.canvas.draw()
+        try:
+            self.canvas.draw()
+        except:
+            print 'Can not plot!'
 
     def add_group(self):
         index = self.ternaryPlot.add_null_plot()
@@ -31,6 +34,7 @@ class TernaryData():
         self.draw()
 
     def remove_group(self, index):
+        print '#', index, self.groups
         if index in self.groups:
             self.groups.remove(index)
             self.ternaryPlot.remove_plot(index)
@@ -81,7 +85,7 @@ class TernaryData():
         return short_labels
     
     def get_main_labels(self):
-        main_labels = self.ternaryPlot.main_labels
+        main_labels = self.ternaryPlot.get_main_labels()
         if not main_labels:
             main_labels = ['', '', '']
         return main_labels

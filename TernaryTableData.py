@@ -119,7 +119,7 @@ class TableDataBase(QtGui.QTableWidget):
         item.setTextAlignment(QtCore.Qt.AlignCenter)
         text = item.text().replace(',', '.')
         try:
-            value = float(text)
+            value = abs(float(text))
             self.addRow()
             item.setText('%.2f' % value)
         except ValueError:

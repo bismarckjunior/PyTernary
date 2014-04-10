@@ -22,6 +22,9 @@ class TernarySettingsFrame(QtGui.QFrame):
         #Labels
         l_title = QtGui.QLabel()
         l_axesLabel = [QtGui.QLabel() for i in range(3)]
+        l_title_size = QtGui.QLabel()
+        l_short_size = QtGui.QLabel()
+        l_main_size = QtGui.QLabel()
 
         #Lines edit
         self.le_title = QtGui.QLineEdit()
@@ -29,7 +32,7 @@ class TernarySettingsFrame(QtGui.QFrame):
         self.le_mainLabels = [QtGui.QLineEdit() for i in range(3)]
 
         #Spinboxes
-        self.sb_title = QtGui.QSpinBox()    
+        self.sb_title = QtGui.QSpinBox()
         self.sb_shortLabels = QtGui.QSpinBox()
         self.sb_mainLabels = QtGui.QSpinBox()
 
@@ -43,6 +46,7 @@ class TernarySettingsFrame(QtGui.QFrame):
         #Horizontal boxes
         hbox_title = QtGui.QHBoxLayout()
         hbox_axesLabel = [QtGui.QHBoxLayout() for i in range(3)]
+        hbox_label_sizes = QtGui.QHBoxLayout()
         hbox_checkboxes = QtGui.QHBoxLayout()
 
         #Vertical box
@@ -51,9 +55,14 @@ class TernarySettingsFrame(QtGui.QFrame):
         #Editing labels and initializing line edit
         l_title.setText('Title:')
         l_title.setFixedWidth(40)
+        l_title_size.setText('Size:')
         self.le_title.setText(self.ternaryData.get_title())
         shortLabels = self.ternaryData.get_short_labels()
         mainLabels = self.ternaryData.get_main_labels()
+        l_short_size.setText('Short label size:')
+        l_short_size.setFixedWidth(98)
+        l_main_size.setText('Main label size:')
+        l_main_size.setFixedWidth(80)
         for i in range(3):
             l_axesLabel[i].setText('Axis %d:' % (i+1))
             l_axesLabel[i].setFixedWidth(40)
@@ -64,13 +73,19 @@ class TernarySettingsFrame(QtGui.QFrame):
         #Editing spinboxes
         TP = self.ternaryData.ternaryPlot
         fontsizes = []
-        for plot in [TP.ttitle, TP.short_labels_plot[0],
-                     TP.axes[0].plots['label']]:
+        for plot in [TP.ttitle, TP.short_labels_plot[0]]:
             if plot:
                 font_props = plot.properties()['fontproperties']
                 fontsizes.append(int(font_props.get_size_in_points()))
             else:
                 fontsizes.append(15)
+        plot_long_label = TP.axes[0].plots['label']
+        if plot_long_label:
+            font_props = plot_long_label[0].properties()['fontproperties']
+            fontsizes.append(int(font_props.get_size_in_points()))
+        else:
+            fontsizes.append(15)
+
         self.sb_title.setValue(fontsizes.pop(0))
         self.sb_shortLabels.setValue(fontsizes.pop(0))
         self.sb_mainLabels.setValue(fontsizes.pop(0))
@@ -85,6 +100,7 @@ class TernarySettingsFrame(QtGui.QFrame):
         #Editing horizontal boxes
         hbox_title.addWidget(l_title)
         hbox_title.addWidget(self.le_title)
+        hbox_title.addWidget(l_title_size)
         hbox_title.addWidget(self.sb_title)
         vbox_labels.addLayout(hbox_title)
         for i in range(3):
@@ -92,8 +108,17 @@ class TernarySettingsFrame(QtGui.QFrame):
             hbox_axesLabel[i].addWidget(self.le_shortLabels[i])
             hbox_axesLabel[i].addWidget(self.le_mainLabels[i])
             vbox_labels.addLayout(hbox_axesLabel[i])
-        vbox_labels.addWidget(self.sb_shortLabels)
-        vbox_labels.addWidget(self.sb_mainLabels)
+        hbox_label_sizes.addWidget(l_short_size)
+        hbox_label_sizes.addWidget(self.sb_shortLabels)
+        hbox_label_sizes.addSpacing(2)
+        hbox_label_sizes.addWidget(l_main_size)
+        hbox_label_sizes.addWidget(self.sb_mainLabels)
+        hbox_label_sizes.addStretch()
+        
+        #vbox_labels.addWidget(self.sb_shortLabels)
+        #vbox_labels.addWidget(self.sb_mainLabels)
+        vbox_labels.addLayout(hbox_label_sizes)
+        
         hbox_checkboxes.addSpacing(10)
         hbox_checkboxes.addWidget(self.cb_inv)
         hbox_checkboxes.addWidget(self.cb_perc)
@@ -112,7 +137,7 @@ class TernarySettingsFrame(QtGui.QFrame):
             self.cb_perc.setCheckState(QtCore.Qt.Checked)
         else:
             self.cb_perc.setCheckState(QtCore.Qt.Unchecked)
-        
+
         #Editing min_max checkbox
         if self.ternaryData.ternaryPlot.min_maxOn:
             self.cb_min_max.setCheckState(QtCore.Qt.Checked)

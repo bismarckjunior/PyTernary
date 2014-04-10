@@ -7,15 +7,16 @@
 
 #TODO:
     * Mudar posiçao do ternarySettingsFrame
-    * Mudar posicao tamanho da fonte
-    * grupos da tabela e do plot diferentes
-        - Adicione grupo 2 e 3
-        - Remova o grupo 2, 1 e 3 
+    * Inverse ativa ticks, mesmo quando desligado
+    * Inverse nao preserva tamanho da fonte
+    * Evitar a duplicação na importortação
+    * Modificações das configurações instantaneas
+
 """
 from PyQt4 import QtGui, QtCore
-from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigCanvas
 from matplotlib.figure import Figure
-from TernaryPlot import TernaryPlot 
+from TernaryPlot import TernaryPlot
 from TernaryData import TernaryData
 from GroupsFrame import GroupsFrame
 import sys
@@ -39,7 +40,7 @@ class PyTernary(QtGui.QMainWindow):
 
         #Creating Plot panel
         self.fig = Figure()
-        self.canvas = FigureCanvas(self.fig)
+        self.canvas = FigCanvas(self.fig)
         self.canvas.setParent(main_frame)
 
         #Creating TernaryPlot

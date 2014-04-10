@@ -100,7 +100,7 @@ class TableFrame(QtGui.QFrame):
             fname += self.FORMATFILE  # TODO: testar
 
         f = open(str(fname.toUtf8()), 'w')
-        header = [h.strip() for h in self.headerLabels]
+        header = [h.strip() for h in self.table.headerLabels]
         f.write('#{:9} {:10} {:10}\n'.format(*header))
         for row in range(self.table.rowCount()-1):
             line = []
@@ -136,13 +136,15 @@ class GroupsToolBox(QtGui.QToolBox):
 
     def removeCurrentTab(self):
         self.removeTab(self.currentIndex())
+        print self.maxTabNumber, self.ternaryData.groups
 
     def removeTab(self, index):
         if self.count() == 1:
-            self.removeItem(0)
-            frame = self.frames.pop(index)
-            self.ternaryData.remove_group(frame.table.index)
-            self.addTab()
+#            self.removeItem(0)
+#            frame = self.frames.pop(index)
+#            self.ternaryData.remove_group(frame.table.index)
+#            print self.maxTabNumber, self.ternaryData.groups
+#            self.addTab()
             return
         if index == self.count()-1:
             self.maxTabNumber -= 1
@@ -213,13 +215,20 @@ class GroupsFrame(QtGui.QFrame):
         self.setMinimumHeight(400)
 
 
-class main(QtGui.QMainWindow):
-    def __init__(self, parent=None):
-        super(main, self).__init__(parent)
-        self.setCentralWidget(GroupsFrame(['A', 'B', 'C']))
+
 
 
 if __name__ == '__main__':
+    from TernaryData import *
+    from TernaryPlot import TernaryPlot
+    ternaryPlot = TernaryPlot(short_labels=['a','b','c'])
+    TD = TernaryData(['S', 'D', 'E'], ternaryPlot, 3)
+    
+    class main(QtGui.QMainWindow):
+        def __init__(self, parent=None):
+            super(main, self).__init__(parent)
+            self.setCentralWidget(GroupsFrame(TD))
+        
     app = QtGui.QApplication(sys.argv)
     main = main()
     main.show()
