@@ -78,11 +78,25 @@ class TableDataBase(QtGui.QTableWidget):
         #Inserting vertical headers and setting row heights
         self.updateRows()
 
+        def fun():
+            self.first_table_changed = True
+
         #Connections
-        self.cellChanged.connect(self.__cellTableChanged)
+        self.cellChanged.connect(self.cellTableChanged)
+        self.itemSelectionChanged.connect(fun)
 
         #Edit with oneclick
         #self.setEditTriggers(QtGui.QAbstractItemView.CurrentChanged)
+
+    def getRow(self, row):
+        line = []
+        for col in range(3):
+            try:
+                value = float(self.item(row, col).text())
+            except:
+                value = ''
+            line.append(value)
+        return line
 
     def isEmptyCell(self, row, col):
         'Boole for empty cell.'
@@ -108,13 +122,18 @@ class TableDataBase(QtGui.QTableWidget):
             self.setVerticalHeaderItem(row,
                                        QtGui.QTableWidgetItem('%02i' % (row+1)))
 
-    def updateRows(self):
+    def updateRows(self, rowHeight=True):
         header = ['%02i' % (i+1) for i in range(self.rowCount())]
         self.setVerticalHeaderLabels(header)
-        for i in range(self.rowCount()):
-            self.setRowHeight(i, self.ROWHEIGHT)        
+        if rowHeight:
+            for i in range(self.rowCount()):
+                self.setRowHeight(i, self.ROWHEIGHT)        
 
-    def __cellTableChanged(self, row, col):
+    def cellTableChanged(self, row, col):
+        if not self.first_table_changed:
+            return
+        else:
+            self.first_table_changed = False
         item = self.item(row, col)
         item.setTextAlignment(QtCore.Qt.AlignCenter)
         text = item.text().replace(',', '.')
@@ -162,7 +181,7 @@ class TableDataBase(QtGui.QTableWidget):
                 self.updateRows()
         else:
             QtGui.QTableView.keyPressEvent(self, event)
-
+        self.first_table_changed = True
 
 class TableData(TableDataBase, EditableHeaderMixin):
     def __init__(self, nrow, ncol, headerLabels, parent=None):
@@ -178,17 +197,20 @@ class TernaryTableData(TableData):
         self.ternaryData = ternaryData
         self.index = self.ternaryData.add_group()
         super(TernaryTableData, self).__init__(1, 3, headerLabels, parent)
-        
+
         self.data = []
+        self.first_table_changed = True
 
         #Connections
         headers = self.horizontalHeader()
         headers.sectionDoubleClicked.connect(self.__changeHeaderItem)
-        self.cellChanged.connect(self.__cellTableChanged)
-    
-    def updateRows(self):
-        TableData.updateRows(self)
+        self.cellChanged.disconnect()
+        self.cellChanged.connect(self.cellTableChanged)
+
+    def updateRows(self, rowHeight=True):
+        TableData.updateRows(self, rowHeight)
         data = []
+        #"""
         for row in range(self.rowCount()):
             d = []
             for col in range(3):
@@ -203,20 +225,44 @@ class TernaryTableData(TableData):
         if not data:
             self.ternaryData.set_legend_visibility(self.index, False)
         self.ternaryData.draw()
+        """
+        self.data = []
+        for row in range(self.rowCount()):
+            d = []
+            for col in range(3):
+                try:
+                    d.append(float(self.item(row, col).text()))
+                except:
+                    d.append('')
+            if '' in d:
+                self.data.append(d)
+            else:
+                data.append(d)
+        self.data += data
+        self.ternaryData.update_plot(self.index, data)
+        if not data:
+            self.ternaryData.set_legend_visibility(self.index, False)
+        self.ternaryData.draw() #"""
 
     def __changeHeaderItem(self, index):
         #TODO: dataWidget
         pass
 
-    def __cellTableChanged(self, row, col):
+    def cellTableChanged(self, row, col, force=False, complete=True):
+        if self.first_table_changed or force:
+            TableData.cellTableChanged(self, row, col)
+        else:
+            return
+
         line = []
         for i in range(3):
             item = self.item(row, i)
             value = float(item.text()) if item and item.text() else None
             line.append(value)
-        
+
         #Completing line
-        if line.count(None) == 1:
+        count = line.count(None)
+        if count == 1 and complete:
             i = line.index(None)
             line.remove(None)
             sum_ = sum(line)
@@ -228,16 +274,47 @@ class TernaryTableData(TableData):
                 item = QtGui.QTableWidgetItem(str(value))
                 self.setItem(row, i, item)
                 self.setCurrentCell(row, i)
-            line.insert(i, value)
-        if line.count(None) == 0 and line not in self.data:
-            #Removing old line
+                count = 0
+                line.insert(i, value)
+            else:
+                line.insert(i, None)
+#        if count == 0:
+#            if line not in self.data:
+#                #Removing old line
+#                while(row >= len(self.data)):
+#                    self.data.append([])
+#                if self.data[row]:
+#                    self.ternaryData.remove_data(self.index, self.data[row])
+#                #Ploting point
+#                self.ternaryData.add_data(self.index, line)
+#                self.data[row] = line
+#            else:
+#                self.removeRow(row)
+#                self.updateRows(False)
+
+#        if count == 0 and line not in self.data:
+#                if self.data[row] and not None in self.data[row]:
+#                    self.ternaryData.remove_data(self.index, self.data[row])
+#                #Ploting point
+#                self.ternaryData.add_data(self.index, line)
+
+        if line in self.data:
+            self.removeRow(row)
+            self.updateRows(False)
+        else:
             while(row >= len(self.data)):
                 self.data.append([])
-            if self.data[row]:
-                self.ternaryData.remove_data(self.index, self.data[row])
-            #Ploting point
-            self.ternaryData.add_data(self.index, line)
+            if count == 0:
+                if self.data[row] and not None in self.data[row]:
+                    self.ternaryData.remove_data(self.index, self.data[row])
+                #Ploting point
+                self.ternaryData.add_data(self.index, line)
             self.data[row] = line
+
+    def removeRow(self, row, removeData=False):
+        TableData.removeRow(self, row)
+        self.data.pop(row)
+        
 
 
 class main(QtGui.QMainWindow):
@@ -245,7 +322,7 @@ class main(QtGui.QMainWindow):
         super(main, self).__init__(parent)
         #fig = plt.figure()
         ternaryPlot = TernaryPlot()
-        
+
         ternaryData = TernaryData(['A', 'B', 'C'], ternaryPlot, ternaryPlot.canvas)
         table = TernaryTableData(ternaryData)
         box = QtGui.QVBoxLayout()

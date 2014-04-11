@@ -387,7 +387,7 @@ class TernaryPlot():
                 x_plot = np.delete(x_plot, i)
                 y_plot = np.delete(y_plot, i)
         self.plots[index][0].set_data(x_plot, y_plot)
-        if not x_plot:
+        if len(x_plot) == 0:
             self.set_legend_visibility(index, False)
         
     def get_properties(self, index, key=None):

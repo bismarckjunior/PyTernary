@@ -9,7 +9,6 @@
     * Mudar posiçao do ternarySettingsFrame
     * Inverse ativa ticks, mesmo quando desligado
     * Inverse nao preserva tamanho da fonte
-    * Evitar a duplicação na importortação
     * Modificações das configurações instantaneas
 
 """

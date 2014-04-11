@@ -69,8 +69,11 @@ class TableFrame(QtGui.QFrame):
                     self.table.insertRow(nrow)
                     for col in range(3):
                         cell = row[col] if row[col] != '-' else ''
-                        self.table.setItem(nrow, col,
-                                           QtGui.QTableWidgetItem(cell))
+                        item = QtGui.QTableWidgetItem(cell)
+                        item.setTextAlignment(QtCore.Qt.AlignCenter)
+                        self.table.setItem(nrow, col, item)
+                    self.table.cellTableChanged(nrow, 0, force=True,
+                                                complete=False)
                 else:
                     lines_error.append(str(nline+1))
 
