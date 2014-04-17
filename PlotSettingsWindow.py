@@ -114,11 +114,11 @@ class TernarySettingsFrame(QtGui.QFrame):
         hbox_label_sizes.addWidget(l_main_size)
         hbox_label_sizes.addWidget(self.sb_mainLabels)
         hbox_label_sizes.addStretch()
-        
+
         #vbox_labels.addWidget(self.sb_shortLabels)
         #vbox_labels.addWidget(self.sb_mainLabels)
         vbox_labels.addLayout(hbox_label_sizes)
-        
+
         hbox_checkboxes.addSpacing(10)
         hbox_checkboxes.addWidget(self.cb_inv)
         hbox_checkboxes.addWidget(self.cb_perc)
@@ -171,16 +171,16 @@ class TernarySettingsFrame(QtGui.QFrame):
         #Lines edit connection
         self.le_title.editingFinished.connect(lambda: self.set_data('title'))
         for i in range(3):
-            self.le_shortLabels[i].editingFinished.connect(lambda: 
+            self.le_shortLabels[i].editingFinished.connect(lambda:
                 self.set_data('short_labels'))
-            self.le_mainLabels[i].editingFinished.connect(lambda: 
+            self.le_mainLabels[i].editingFinished.connect(lambda:
                 self.set_data('main_labels'))
-        
+
         #Spinboxes connection
         self.sb_title.valueChanged.connect(lambda: self.set_data('title'))
         self.sb_shortLabels.valueChanged.connect(lambda: self.set_data('short_labels'))
         self.sb_mainLabels.valueChanged.connect(lambda: self.set_data('main_labels'))
-        
+
         #Checkboxes connection
         self.cb_inv.clicked.connect(lambda: self.set_data('inverse'))
         self.cb_perc.clicked.connect(lambda: self.set_data('percentage'))
@@ -189,8 +189,8 @@ class TernarySettingsFrame(QtGui.QFrame):
         self.cb_ticks.clicked.connect(lambda: self.set_data('ticks'))
 
     def set_data(self, var):
-        if var not in self.vars2update:
-            self.vars2update.append(var)
+#        if var not in self.vars2update:
+#            self.vars2update.append(var)
 #        if key == 'title':
 #            d = {'title': self.le_title.text().trimmed(),
 #                 'fontsize': self.sb_title.value()}
@@ -216,49 +216,77 @@ class TernarySettingsFrame(QtGui.QFrame):
 #        elif key == 'ticks':
 #            ticks = self.cb_ticks.isChecked()
 #            self.new_props[ternaryPlot.set_ticks_visibility] = ticks
-        
-        
-    
-    def apply_new_props(self):
-#        for fun, value in self.new_props.items():
-#            if type(fun) == dict:
-#                value(**fun)
-#            else:
-#                fun(value)     
         ternaryPlot = self.ternaryData.ternaryPlot
-        if 'title' in self.vars2update:
+        if var == 'title':
             title = self.le_title.text()
             fontsize = self.sb_title.value()
             ternaryPlot.set_title(title, fontsize=fontsize)
-        if 'short_labels' in self.vars2update:
+        elif var == 'short_labels':
             short_labels = [le.text().trimmed() for le in self.le_shortLabels]
             fontsize = self.sb_shortLabels.value()
             ternaryPlot.set_short_labels(short_labels, fontsize=fontsize)
-        if 'main_labels' in self.vars2update:
+        elif var == 'main_labels':
             main_labels = [le.text().trimmed() for le in self.le_mainLabels]
             fontsize = self.sb_mainLabels.value()
             ternaryPlot.set_main_labels(main_labels, fontsize=fontsize)
-        if 'inverse' in self.vars2update:
+        elif var == 'inverse':
             inverse = self.cb_inv.isChecked()
             self.ternaryData.set_inverse(inverse)
-        if 'percentage' in self.vars2update:
+        elif var == 'percentage':
             percentage = self.cb_perc.isChecked()
             ternaryPlot.percentage(percentage)
-        if 'min_max' in self.vars2update:
+        elif var == 'min_max':
             min_max = self.cb_min_max.isChecked()
             ternaryPlot.show_min_max(min_max)
-        if 'grid' in self.vars2update:
+        elif var == 'grid':
             grid = self.cb_grid.isChecked()
             ternaryPlot.grid(grid)
-        if 'ticks' in self.vars2update:
+        elif var == 'ticks':
             ticks = self.cb_ticks.isChecked()
             ternaryPlot.set_ticks_visibility(ticks)
+        self.ternaryData.draw()
+
+#    def apply_new_props(self):
+##        for fun, value in self.new_props.items():
+##            if type(fun) == dict:
+##                value(**fun)
+##            else:
+##                fun(value)     
+#        ternaryPlot = self.ternaryData.ternaryPlot
+#        if 'title' in self.vars2update:
+#            title = self.le_title.text()
+#            fontsize = self.sb_title.value()
+#            ternaryPlot.set_title(title, fontsize=fontsize)
+#        if 'short_labels' in self.vars2update:
+#            short_labels = [le.text().trimmed() for le in self.le_shortLabels]
+#            fontsize = self.sb_shortLabels.value()
+#            ternaryPlot.set_short_labels(short_labels, fontsize=fontsize)
+#        if 'main_labels' in self.vars2update:
+#            main_labels = [le.text().trimmed() for le in self.le_mainLabels]
+#            fontsize = self.sb_mainLabels.value()
+#            ternaryPlot.set_main_labels(main_labels, fontsize=fontsize)
+#        if 'inverse' in self.vars2update:
+#            inverse = self.cb_inv.isChecked()
+#            self.ternaryData.set_inverse(inverse)
+#        if 'percentage' in self.vars2update:
+#            percentage = self.cb_perc.isChecked()
+#            ternaryPlot.percentage(percentage)
+#        if 'min_max' in self.vars2update:
+#            min_max = self.cb_min_max.isChecked()
+#            ternaryPlot.show_min_max(min_max)
+#        if 'grid' in self.vars2update:
+#            grid = self.cb_grid.isChecked()
+#            ternaryPlot.grid(grid)
+#        if 'ticks' in self.vars2update:
+#            ticks = self.cb_ticks.isChecked()
+#            ternaryPlot.set_ticks_visibility(ticks)
 
 
 class GroupsSettingsTable(QtGui.QTableWidget):
     ROWHEIGHT = 22
     markers = ['.', ',', 'o', 'v', '^', '<', '>', '1', '2', '3', '4',
-                        's', 'p', '*', 'h', 'H', '+', 'x', 'D', 'd', '|', '_']
+               's', 'p', '*', 'h', 'H', '+', 'x', 'D', 'd', '|', '_']
+
     def __init__(self, ternaryData, parent=None):
         super(GroupsSettingsTable, self).__init__(parent)
         self.ternaryData = ternaryData
@@ -269,16 +297,16 @@ class GroupsSettingsTable(QtGui.QTableWidget):
         columnsWidth = [150] + [60]*5
         for i, column in enumerate(columnsWidth):
             self.setColumnWidth(i, column)
-        
+
         self.addRows()
-        
+
         #Connections
         self.cellClicked.connect(self.__setCellColor)
         self.cellChanged.connect(self.__groupLabel_action)
 
     def addRows(self):
         self.frmColor = []      # Frames for color
-        self.new_props = {}     # New properties for plot
+#        self.new_props = {}     # New properties for plot
         self.legends = []       # List of bools for legends plot
 
         self.signalMapperComboBox = QtCore.QSignalMapper()
@@ -291,7 +319,6 @@ class GroupsSettingsTable(QtGui.QTableWidget):
             self.setRowHeight(row, self.ROWHEIGHT)
             props = self.ternaryData.get_plot_properties(index)
             props['visible'] = self.ternaryData.get_plot_visibility(index)
-            #self.new_props[row] = props
 
             #Label
             item = QtGui.QTableWidgetItem(props['label'])
@@ -361,46 +388,56 @@ class GroupsSettingsTable(QtGui.QTableWidget):
     def __groupLabel_action(self, row, col):
         value = str(self.item(row, col).text()).strip()
         if value:
-            self.set_new_props(row, 'label', value)
+            self.ternaryData.update_properties(row, label=value)
+            self.ternaryData.renameGroupHeader(row, value)
 
     def __comboBox_action(self, row):
         comboBox = self.signalMapperComboBox.mapping(row)
-        self.set_new_props(row, 'marker', str(comboBox.currentText()))
+        value = str(comboBox.currentText())
+        self.ternaryData.update_properties(row, marker=value)
 
     def __spinBox_action(self, row):
         spinBox = self.signalMapperSpinBox.mapping(row)
-        self.set_new_props(row, 'markersize', float(spinBox.value()))
+        value = float(spinBox.value())
+        self.ternaryData.update_properties(row, markersize=value)
 
     def __checkBox_legend_action(self, row):
-        checkBox = self.signalMapperLegend.mapping(row)
-        self.legends[row] = checkBox.isChecked()
-        self.set_new_props(row)
-        if checkBox.isChecked():
+        checkbox_legend = self.signalMapperLegend.mapping(row)
+        legend_visible = checkbox_legend.isChecked()
+        
+        if legend_visible:
             checkBox_plot = self.signalMapperPlot.mapping(row)
             checkBox_plot.setCheckState(QtCore.Qt.Checked)
-            self.set_new_props(row, 'visible', True)
+            self.__checkBox_plot_action(row)
+            #self.ternaryData.update_properties(row, visible=True)
+        self.ternaryData.set_legend_visibility(row, legend_visible)
 
     def __checkBox_plot_action(self, row):
-        checkBox = self.signalMapperPlot.mapping(row)
-        self.set_new_props(row, 'visible', checkBox.isChecked())
-        if not checkBox.isChecked():
+        checkbox_plot = self.signalMapperPlot.mapping(row)
+        plot_visible = checkbox_plot.isChecked()
+#        self.ternaryData.update_properties(row, visible=plot_visible)
+        if not plot_visible:
             checkBox_legend = self.signalMapperLegend.mapping(row)
             checkBox_legend.setCheckState(QtCore.Qt.Unchecked)
-            self.legends[row] = False
+            self.__checkBox_legend_action(row)
+            #self.ternaryData.set_legend_visibility(row, False)
+        self.ternaryData.update_properties(row, visible=plot_visible)
 
     def __setCellColor(self, row, col):
         if col == 1:
             color = QtGui.QColorDialog.getColor()
             if color.isValid():
                 self.frmColor[row].setStyleSheet("QWidget {background-color: %s}" % color.name())
-                self.set_new_props(row, 'color', str(color.name()))
+                value = str(color.name())
+                self.ternaryData.update_properties(row, color=value)
 
-    def set_new_props(self, row, key=None, value=None):
-        if row not in self.new_props:
-            index = self.ternaryData.groups[row]
-            self.new_props[row] = self.ternaryData.get_plot_properties(index)
-        if key:
-            self.new_props[row][key] = value
+
+#    def set_new_props(self, row, key=None, value=None):
+#        if row not in self.new_props:
+#            index = self.ternaryData.groups[row]
+#            self.new_props[row] = self.ternaryData.get_plot_properties(index)
+#        if key:
+#            self.new_props[row][key] = value
 
 
 class PlotSettingsWindow(QtGui.QDialog):
@@ -415,43 +452,13 @@ class PlotSettingsWindow(QtGui.QDialog):
         self.groupsTable = GroupsSettingsTable(self.ternaryData)
         self.ternarySettingsFrame = TernarySettingsFrame(self.ternaryData)
 
-        #Creating Ok button
-        btn_ok = QtGui.QPushButton('Ok')
-        btn_cancel = QtGui.QPushButton('Cancel')
-        hbox = QtGui.QHBoxLayout()
-        hbox.addStretch()
-        hbox.addWidget(btn_ok)
-        hbox.addWidget(btn_cancel)
-
-        #Conecting
-        self.connect(btn_ok, QtCore.SIGNAL('clicked()'), self.__okAction)
-        self.connect(btn_cancel, QtCore.SIGNAL('clicked()'),
-                     self.__cancelAction)
-
         #Creating main_frame
         mbox = QtGui.QVBoxLayout()
         mbox.addWidget(self.groupsTable)
-               
-        mbox.addWidget(self.ternarySettingsFrame)        
-        
-        
-        mbox.addLayout(hbox)
+        mbox.addWidget(self.ternarySettingsFrame)
+
         self.setLayout(mbox)
         self.setGeometry(QtCore.QRect(10, 50, 490, 350))
-
-    def __cancelAction(self):
-        self.reject()
-    
-    def __okAction(self):
-        self.ternarySettingsFrame.apply_new_props()
-        for key, props in self.groupsTable.new_props.items():
-            index = self.ternaryData.groups[key]
-            legend = self.groupsTable.legends[key]
-            self.ternaryData.set_legend_visibility(index, legend)
-            self.ternaryData.update_properties(index, **props)
-            self.ternaryData.renameGroupHeader(index, props['label'])
-        self.ternaryData.draw()
-        self.accept()
 
 
 if __name__ == '__main__':

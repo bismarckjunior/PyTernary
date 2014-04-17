@@ -9,7 +9,6 @@
     * Mudar posiçao do ternarySettingsFrame
     * Inverse ativa ticks, mesmo quando desligado
     * Inverse nao preserva tamanho da fonte
-    * Modificações das configurações instantaneas
 
 """
 from PyQt4 import QtGui, QtCore
