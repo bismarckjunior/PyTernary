@@ -3,12 +3,11 @@
 @author: Bismarck Gomes Souza Junior
 @date:   Sat Mar 15 09:30:52 2014
 @email:  bismarckjunior@outlook.com
-@brief:  PyTernary is a GUI to plot a Ternary graph. 
+@brief:  PyTernary is a GUI to plot a Ternary graph.
 
 #TODO:
     * Mudar posiçao do ternarySettingsFrame
-    * Inverse ativa ticks, mesmo quando desligado
-    * Inverse nao preserva tamanho da fonte
+    * Criar botão "Set as default"
 
 """
 from PyQt4 import QtGui, QtCore

@@ -41,6 +41,7 @@ class TernarySettingsFrame(QtGui.QFrame):
         self.cb_perc = QtGui.QCheckBox()
         self.cb_grid = QtGui.QCheckBox()
         self.cb_ticks = QtGui.QCheckBox()
+        self.cb_ticks_label = QtGui.QCheckBox()
         self.cb_min_max = QtGui.QCheckBox()
 
         #Horizontal boxes
@@ -95,7 +96,8 @@ class TernarySettingsFrame(QtGui.QFrame):
         self.cb_perc.setText('Percentage')
         self.cb_grid.setText('Grid')
         self.cb_ticks.setText('Ticks')
-        self.cb_min_max.setText('Minimum and Maximum values')
+        self.cb_ticks_label.setText('Ticks Label')
+        self.cb_min_max.setText('Minimum and Maximum')
 
         #Editing horizontal boxes
         hbox_title.addWidget(l_title)
@@ -125,6 +127,7 @@ class TernarySettingsFrame(QtGui.QFrame):
         hbox_checkboxes.addWidget(self.cb_min_max)
         hbox_checkboxes.addWidget(self.cb_grid)
         hbox_checkboxes.addWidget(self.cb_ticks)
+        hbox_checkboxes.addWidget(self.cb_ticks_label)
 
         #Editing inverse checkbox
         if self.ternaryData.ternaryPlot.inverseOn:
@@ -155,6 +158,12 @@ class TernarySettingsFrame(QtGui.QFrame):
             self.cb_ticks.setCheckState(QtCore.Qt.Checked)
         else:
             self.cb_ticks.setCheckState(QtCore.Qt.Unchecked)
+
+        #Editing ticks checkbox
+        if self.ternaryData.ternaryPlot.ticks_label_visibility:
+            self.cb_ticks_label.setCheckState(QtCore.Qt.Checked)
+        else:
+            self.cb_ticks_label.setCheckState(QtCore.Qt.Unchecked)
 
         #Group box
         gbox_labels = QtGui.QGroupBox()
@@ -187,6 +196,7 @@ class TernarySettingsFrame(QtGui.QFrame):
         self.cb_min_max.clicked.connect(lambda: self.set_data('min_max'))
         self.cb_grid.clicked.connect(lambda: self.set_data('grid'))
         self.cb_ticks.clicked.connect(lambda: self.set_data('ticks'))
+        self.cb_ticks_label.clicked.connect(lambda: self.set_data('ticks_label'))
 
     def set_data(self, var):
 #        if var not in self.vars2update:
@@ -242,8 +252,11 @@ class TernarySettingsFrame(QtGui.QFrame):
             grid = self.cb_grid.isChecked()
             ternaryPlot.grid(grid)
         elif var == 'ticks':
-            ticks = self.cb_ticks.isChecked()
-            ternaryPlot.set_ticks_visibility(ticks)
+            visibility = self.cb_ticks.isChecked()
+            ternaryPlot.set_ticks_visibility(visibility)
+        elif var == 'ticks_label':
+            visibility = self.cb_ticks_label.isChecked()
+            ternaryPlot.set_ticks_label_visibility(visibility)
         self.ternaryData.draw()
 
 #    def apply_new_props(self):

@@ -49,6 +49,8 @@ class TernaryAxis():
         self.gridOn = True
         self.inverseOn = False
         self.min_max = True   # plots 0.0 and 1.0
+        self.ticks_visibility = True
+        self.ticks_label_visibility = True
 
         #Creating axis
         self.ax = ax = fig.add_subplot(111, aspect='equal')
@@ -83,13 +85,31 @@ class TernaryAxis():
     
     def set_label(self, text, **kw):
         '''Sets the axis label.'''
-        self.remove('label')   
+        self.remove('label')
         xy = (np.array(self.beg)+np.array(self.end))/2.+np.array(self.transform_label)
+#        if self.ticks_label_visibility:
+#            xy = (np.array(self.beg)+np.array(self.end))/2.+np.array(self.transform_label)
+#        else:
+#            if self.type=='right':
+#                transform = (0.035, 0.02)
+#            elif self.type=='left':
+#                transform = (-0.035, 0.02)
+#            else:
+#                transform = (0, -0.03)
+#            xy = (np.array(self.beg)+np.array(self.end))/2.+np.array(transform)
+            
         if self.label_rotation:
             self.plots['label'] = [self.text(xy[0],xy[1], text, ha='center', va='center', rotation=self.label_rotation, **kw)]
         else:
             self.plots['label'] = [self.text(xy[0],xy[1], text, ha='center', va='top', **kw)]
-    
+
+    def update_label(self):
+        if 'label' in self.plots and self.plots['label']:
+            text = self.plots['label'][0].get_text()
+            fp = self.plots['label'][0].get_font_properties()
+            self.set_label(text)
+            self.plots['label'][0].set_font_properties(fp)
+        
     def get_label(self):
         '''Gets the label.'''
         return self.plots['label'][0].get_text() if self.plots['label'] else ''        
@@ -147,23 +167,24 @@ class TernaryAxis():
     def remove_ticks_label(self):
         '''Removes ticks label.'''
         self.remove('ticks_label')
-        if self.type=='right':
-            transform = (0.035,0.02)
-        elif self.type=='left':
-            transform = (-0.035,0.02)
-        else:
-            transform = (0,-0.03)
-        xy = (np.array(self.beg)+np.array(self.end))/2.+np.array(transform)
-        if 'label' in self.plots and self.plots['label']:
-            text = self.plots['label'][0].get_text()
-            fp= self.plots['label'][0].get_font_properties()
-            self.remove('label')
-            if self.label_rotation:
-                self.plots['label'] = [self.text(xy[0],xy[1], text, ha='center', va='center', rotation=self.label_rotation)]
-            else:
-                self.plots['label'] = [self.text(xy[0],xy[1], text, ha='center', va='top')]
-            self.plots['label'][0].set_font_properties(fp)
-        
+        self.update_label()
+#        if self.type=='right':
+#            transform = (0.035,0.02)
+#        elif self.type=='left':
+#            transform = (-0.035,0.02)
+#        else:
+#            transform = (0,-0.03)
+#        xy = (np.array(self.beg)+np.array(self.end))/2.+np.array(transform)
+#        if 'label' in self.plots and self.plots['label']:
+#            text = self.plots['label'][0].get_text()
+#            fp = self.plots['label'][0].get_font_properties()
+#            self.remove('label')
+#            if self.label_rotation:
+#                self.plots['label'] = [self.text(xy[0],xy[1], text, ha='center', va='center', rotation=self.label_rotation)]
+#            else:
+#                self.plots['label'] = [self.text(xy[0],xy[1], text, ha='center', va='top')]
+#            self.plots['label'][0].set_font_properties(fp)
+
     def __inverse(self):
         '''Changes the tick angle.'''
         self.inverseOn = not self.inverseOn
@@ -173,25 +194,25 @@ class TernaryAxis():
             self.phi_tick = 0 if self.inverseOn else -np.pi/3
         else:
             self.phi_tick = 2*np.pi/3 if self.inverseOn else np.pi/3
-                    
+
     def inverse(self):
         '''Inverse the axis.'''
         self.__inverse()
         self.update()
-    
+
     def plot_inverse_ticks(self):
         '''Plots the invese ticks.'''
-        self.__inverse()
         self.__plot_ticks()
         self.__inverse()
-                
+
     def update(self):
         '''Updates the graph.'''
         self.remove('ticks')
         self.remove('ticks_label')
 #        self.remove('grids') 
         self.__plot_ticks()
-        self.__plot_ticks_label()
+        if self.ticks_label_visibility:
+            self.__plot_ticks_label()
         if self.gridOn: self.grid(True)        
    
     def __rect(self, r, phi):
@@ -206,6 +227,8 @@ class TernaryAxis():
                 x2,y2 = tuple(np.array(tick)+np.array(self.__rect(self.llen_ticks, self.phi_tick))) 
                 plt_tick = self.ax.plot([x1,x2], [y1,y2], 'k-', lw=self.lw_ticks)
                 self.plots['ticks'].append(plt_tick)
+        if not self.ticks_visibility:
+            self.set_ticks_visibility(False)
     
     def __plot_ticks_label(self):
         '''Plots the ticks label.'''
@@ -217,8 +240,10 @@ class TernaryAxis():
                     continue 
             xy_label = np.array(tick)+np.array(self.transform_tick_label)
             if self.percentageOn: label = '%g%%' % (label*100)
-            plt_labels = self.text(xy_label[0], xy_label[1], label, ha=self.ha_tick_label, fontsize=11)
+            plt_labels = self.text(xy_label[0], xy_label[1], label, ha=self.ha_tick_label, va='bottom', fontsize=11)
             self.plots['ticks_label'].append(plt_labels)
+        self.update_label()
+        
              
     def __boundary_point(self, xy):
         '''Finds the triangle boundary.'''
@@ -247,11 +272,33 @@ class TernaryAxis():
         return (a, b)
         
     def set_ticks_visibility(self, visibility):
+        self.ticks_visibility = bool(visibility)
         for tick in self.plots['ticks']:
-            tick[0].set_visible(visibility)
+            tick[0].set_visible(self.ticks_visibility)
+
+    def set_ticks_label_visibility(self, visibility):
+        self.ticks_label_visibility = bool(visibility)
+        if self.plots['ticks_label']:
+            for tick_label in self.plots['ticks_label']:
+                tick_label.set_visible(self.ticks_label_visibility)
+        elif self.ticks_label_visibility:
+            self.__plot_ticks_label()
+#        if self.ticks_label_visibility:
+#            self.__plot_ticks_label()
+#        else:
+#            self.remove_ticks_label()
+            
+        
 
 
 class TernaryPlot():
+    MARKER = 'o'
+    MARKERSIZE = 8
+    LINESTYLE = ''
+    LABEL_PLOT = 'Group'
+    MAIN_LABEL_FONTSIZE = 15
+    SHORT_LABEL_FONTSIZE = 15
+
     def __init__(self, fig=None, title='', main_labels=[], short_labels=[],
                  canvas=plt):
         #Setting figure
@@ -259,10 +306,10 @@ class TernaryPlot():
             self.fig = fig
         else:
             self.fig = plt.figure()
-            
+
         mngr = plt.get_current_fig_manager()
         # to put it into the upper left corner for example:
-        mngr.window.setGeometry(50,100,640, 545)
+        mngr.window.setGeometry(50, 100, 640, 545)
 
         #Clearing plot
         self.clear_plot()
@@ -276,9 +323,12 @@ class TernaryPlot():
         self.min_maxOn = True
         self.gridOn = True
         self.ticks_visibility = True
+        self.ticks_label_visibility = True
         self.plots = []
         self.properties = []
         self.short_labels_plot = []
+        self.main_labels_props = {'fontsize': self.MAIN_LABEL_FONTSIZE}
+        self.short_labels_props = {'fontsize': self.SHORT_LABEL_FONTSIZE}
 #        self.legends_labels = []
         self.legends_visible = []
         self.__set_colors()
@@ -289,9 +339,9 @@ class TernaryPlot():
         self.short_labels = short_labels
         self.set_title(title, fontsize=20)
         if main_labels:
-            self.set_main_labels(main_labels, fontsize=15)
+            self.set_main_labels(main_labels)
         if short_labels:
-            self.set_short_labels(short_labels, d=0.98, fontsize=15)
+            self.set_short_labels(short_labels)
             self.show_min_max(False)
 
     def __set_colors(self):
@@ -304,8 +354,11 @@ class TernaryPlot():
 
     def __generate_properties(self, **kw):
         '''Generates and returns properties for plot.'''
-        props = {'marker': 'o', 'markersize': 6, 'linestyle': '', 
-                 'label':'Group %d' % (len(self.plots)+1-len(self.templates))}
+        props = {'marker': self.MARKER,
+                 'markersize': self.MARKERSIZE,
+                 'linestyle': self.LINESTYLE,
+                 'label': self.LABEL_PLOT + ' '
+                     + str(len(self.plots)+1-len(self.templates))}
         for key in kw:
             props[key] = kw[key]
         if 'color' not in props:
@@ -319,11 +372,11 @@ class TernaryPlot():
             return self.plots[index][0].get_visible()
         else:
             return False
-    
+
     def get_legend_visibility(self, index):
         '''Gets bool for legend visibility.'''
         return self.legends_visible[index]
-    
+
     def set_legend_visibility(self, index, toggle):
         '''Sets legend visibility.'''
         if self.get_plot_visibility(index):
@@ -416,8 +469,14 @@ class TernaryPlot():
 
     def set_main_labels(self, labels, **kw):
         '''Sets main labels.'''
+        for key in kw:
+            self.main_labels_props[key] = kw[key]
+        
+        if self.inverseOn:
+            labels = [labels[2], labels[0], labels[1]] 
+
         for i, ax in enumerate(self.axes):
-            ax.set_label(str(labels[i]).strip(), **kw)
+            ax.set_label(str(labels[i]).strip(), **self.main_labels_props)
 
     def set_short_labels(self, labels, d=0.98, **kw):
         '''Sets the label on the  edges of the triangle.'''
@@ -434,12 +493,19 @@ class TernaryPlot():
             self.short_title = []
         self.d_title(d)
 
-        if not 'fontsize' in kw:
-            kw['fontsize'] = 16
+#        if not 'fontsize' in kw:
+#            kw['fontsize'] = self.SHORT_LABEL_FONTSIZE
+
+        for key in kw:
+            self.short_labels_props[key] = kw[key]
+
+        #Saving short labels properties
+#        self.short_labels_props = kw
 
         for i, xy in enumerate(locations):
             short_label = self.__ax.text(xy[0], xy[1], labels[i],
-                                         ha=has[i], va=vas[i], **kw)
+                                         ha=has[i], va=vas[i],
+                                         **self.short_labels_props)
             self.short_labels_plot.append(short_label)
 
     def transform_points(self, data):
@@ -506,6 +572,11 @@ class TernaryPlot():
         self.ticks_visibility = visibility
         for ax in self.axes:
             ax.set_ticks_visibility(visibility)
+
+    def set_ticks_label_visibility(self, visibility):
+        self.ticks_label_visibility = bool(visibility)
+        for ax in self.axes:
+            ax.set_ticks_label_visibility(self.ticks_label_visibility)
 
     def update_axes(self):
         '''Updates axes and data.'''
@@ -606,7 +677,7 @@ class TernaryPlot():
         self.inverseOn = not self.inverseOn
         for ax, t in zip(self.axes, new_labels):
             ax.inverse()
-            ax.set_label(t)
+            ax.set_label(t, **self.main_labels_props)
 
     def __plot_template(self, data, kind, **kw):
         '''Plots the template using linear or cubic interpolation.'''
