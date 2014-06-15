@@ -174,6 +174,7 @@ class TernarySettingsFrame(QtGui.QFrame):
         vbox = QtGui.QVBoxLayout()
         vbox.addWidget(gbox_labels)
         vbox.addLayout(hbox_checkboxes)
+        vbox.addStretch()
         self.setLayout(vbox)
 
     def set_connections(self):
@@ -199,33 +200,6 @@ class TernarySettingsFrame(QtGui.QFrame):
         self.cb_ticks_label.clicked.connect(lambda: self.set_data('ticks_label'))
 
     def set_data(self, var):
-#        if var not in self.vars2update:
-#            self.vars2update.append(var)
-#        if key == 'title':
-#            d = {'title': self.le_title.text().trimmed(),
-#                 'fontsize': self.sb_title.value()}
-#            self.new_props[d] = ternaryPlot.set_title
-#        elif key == 'short_labels':
-#            short_labels = [le.text().trimmed() for le in self.le_shortLabels]
-#            self.new_props[ternaryPlot.set_short_labels] = short_labels
-#        elif key == 'main_labels':
-#            main_labels = [le.text().trimmed() for le in self.le_mainLabels]
-#            self.new_props[ternaryPlot.set_main_labels] = main_labels
-#        elif key == 'inverse':
-#            inverse = self.cb_inv.isChecked()
-#            self.new_props[self.ternaryData.set_inverse] = inverse
-#        elif key == 'percentage':
-#            percentage = self.cb_perc.isChecked()
-#            self.new_props[ternaryPlot.percentage] = percentage
-#        elif key == 'min_max':
-#            min_max = self.cb_min_max.isChecked()
-#            self.new_props[ternaryPlot.show_min_max] = min_max
-#        elif key == 'grid':
-#            grid = self.cb_grid.isChecked()
-#            self.new_props[ternaryPlot.grid] = grid
-#        elif key == 'ticks':
-#            ticks = self.cb_ticks.isChecked()
-#            self.new_props[ternaryPlot.set_ticks_visibility] = ticks
         ternaryPlot = self.ternaryData.ternaryPlot
         if var == 'title':
             title = self.le_title.text()
@@ -259,40 +233,20 @@ class TernarySettingsFrame(QtGui.QFrame):
             ternaryPlot.set_ticks_label_visibility(visibility)
         self.ternaryData.draw()
 
-#    def apply_new_props(self):
-##        for fun, value in self.new_props.items():
-##            if type(fun) == dict:
-##                value(**fun)
-##            else:
-##                fun(value)     
-#        ternaryPlot = self.ternaryData.ternaryPlot
-#        if 'title' in self.vars2update:
-#            title = self.le_title.text()
-#            fontsize = self.sb_title.value()
-#            ternaryPlot.set_title(title, fontsize=fontsize)
-#        if 'short_labels' in self.vars2update:
-#            short_labels = [le.text().trimmed() for le in self.le_shortLabels]
-#            fontsize = self.sb_shortLabels.value()
-#            ternaryPlot.set_short_labels(short_labels, fontsize=fontsize)
-#        if 'main_labels' in self.vars2update:
-#            main_labels = [le.text().trimmed() for le in self.le_mainLabels]
-#            fontsize = self.sb_mainLabels.value()
-#            ternaryPlot.set_main_labels(main_labels, fontsize=fontsize)
-#        if 'inverse' in self.vars2update:
-#            inverse = self.cb_inv.isChecked()
-#            self.ternaryData.set_inverse(inverse)
-#        if 'percentage' in self.vars2update:
-#            percentage = self.cb_perc.isChecked()
-#            ternaryPlot.percentage(percentage)
-#        if 'min_max' in self.vars2update:
-#            min_max = self.cb_min_max.isChecked()
-#            ternaryPlot.show_min_max(min_max)
-#        if 'grid' in self.vars2update:
-#            grid = self.cb_grid.isChecked()
-#            ternaryPlot.grid(grid)
-#        if 'ticks' in self.vars2update:
-#            ticks = self.cb_ticks.isChecked()
-#            ternaryPlot.set_ticks_visibility(ticks)
+    def read_defaut(self, filename='ternary.ini'):
+        d_plot = data.read_data(filename)
+        #Title
+        self.le_title.setText(d_plot.get_item('title', ''))
+        self.sb_title.setText(d_plot.get_item('title_size', ''))
+
+        #Labels
+        for i in range(3):
+            shortLabel = str(d_plot.get_item('shortLabel%d' % i+1, ''))
+            mainLabel = str(d_plot.get_item('mainLabel%d' % i+1, ''))
+            self.le_shortLabels[i].setText(shortLabel)
+            self.le_mainLabels[i].seText(mainLabel)
+        
+        
 
 
 class GroupsSettingsTable(QtGui.QTableWidget):
@@ -340,7 +294,8 @@ class GroupsSettingsTable(QtGui.QTableWidget):
             #Color
             color = QtGui.QColor(props['color'])
             self.frmColor.append(QtGui.QFrame())
-            self.frmColor[-1].setStyleSheet("QWidget {background-color: %s}" % color.name())
+            self.frmColor[-1].setStyleSheet("QWidget {background-color: %s}" %
+                                            color.name())
             self.setCellWidget(row, 1, self.frmColor[-1])
 
             #Marker
@@ -365,7 +320,8 @@ class GroupsSettingsTable(QtGui.QTableWidget):
             frame = QtGui.QFrame()
             frame.setStyleSheet("QWidget {background-color: white}")
             chkBoxPlot = QtGui.QCheckBox('')
-            chkBoxPlot.setCheckState(QtCore.Qt.Checked if chkValue else QtCore.Qt.Unchecked)
+            chkBoxPlot.setCheckState(QtCore.Qt.Checked if chkValue else
+                                     QtCore.Qt.Unchecked)
             chkBoxPlot.clicked.connect(self.signalMapperPlot.map)
             self.signalMapperPlot.setMapping(chkBoxPlot, row)
             hbox = QtGui.QHBoxLayout()
@@ -382,7 +338,8 @@ class GroupsSettingsTable(QtGui.QTableWidget):
             frame = QtGui.QFrame()
             frame.setStyleSheet("QWidget {background-color: white}")
             chkBoxLegend = QtGui.QCheckBox('')
-            chkBoxLegend.setCheckState(QtCore.Qt.Checked if chkValue else QtCore.Qt.Unchecked)
+            chkBoxLegend.setCheckState(QtCore.Qt.Checked if chkValue else
+                                       QtCore.Qt.Unchecked)
             chkBoxLegend.clicked.connect(self.signalMapperLegend.map)
             self.signalMapperLegend.setMapping(chkBoxLegend, row)
             hbox = QtGui.QHBoxLayout()
@@ -417,7 +374,7 @@ class GroupsSettingsTable(QtGui.QTableWidget):
     def __checkBox_legend_action(self, row):
         checkbox_legend = self.signalMapperLegend.mapping(row)
         legend_visible = checkbox_legend.isChecked()
-        
+
         if legend_visible:
             checkBox_plot = self.signalMapperPlot.mapping(row)
             checkBox_plot.setCheckState(QtCore.Qt.Checked)
@@ -465,13 +422,17 @@ class PlotSettingsWindow(QtGui.QDialog):
         self.groupsTable = GroupsSettingsTable(self.ternaryData)
         self.ternarySettingsFrame = TernarySettingsFrame(self.ternaryData)
 
+        #Tabs
+        self.tab = QtGui.QTabWidget()
+        self.tab.addTab(self.ternarySettingsFrame, "Plot")
+        self.tab.addTab(self.groupsTable, "Groups")
+
         #Creating main_frame
         mbox = QtGui.QVBoxLayout()
-        mbox.addWidget(self.groupsTable)
-        mbox.addWidget(self.ternarySettingsFrame)
+        mbox.addWidget(self.tab)
 
         self.setLayout(mbox)
-        self.setGeometry(QtCore.QRect(10, 50, 490, 350))
+        #self.setGeometry(QtCore.QRect(10, 50, 490, 350))
 
 
 if __name__ == '__main__':
@@ -481,7 +442,8 @@ if __name__ == '__main__':
     TD = TernaryData(['S', 'D', 'E'], ternaryPlot, 3)
     TD.add_group()
     #TD.remove_group(0)
-    TD.add_group()
+    for i in range(20):
+        TD.add_group()
     app = QtGui.QApplication(sys.argv)
     main = PlotSettingsWindow(TD)
     main.show()

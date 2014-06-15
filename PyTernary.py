@@ -6,8 +6,14 @@
 @brief:  PyTernary is a GUI to plot a Ternary graph.
 
 #TODO:
-    * Mudar posiçao do ternarySettingsFrame
     * Criar botão "Set as default"
+    * Remover o "x" do DockWidget
+    * Points group
+    * Template group
+        - Criar template com o mouse
+    * Botão salvar figura
+    * Botão salvar projeto
+    * Botão abrir projeto
 
 """
 from PyQt4 import QtGui, QtCore
