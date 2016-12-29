@@ -3,13 +3,12 @@
 @author: Bismarck Gomes Souza Junior
 @date:   Sat Mar 15 09:30:52 2014
 @email:  bismarckjunior@outlook.com
-@brief:  PyTernary is a GUI to plot a Ternary graph. 
+@brief:  PyTernary is a GUI to plot a Ternary graph.
 """
 from PyQt4 import QtGui, QtCore
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
 from matplotlib.figure import Figure
-from TernaryPlot import TernaryPlot  
+from TernaryPlot import TernaryPlot
 import sys
 
 
@@ -190,15 +189,15 @@ class PyTernary(QtGui.QMainWindow):
         row = table.rowCount() if table.currentRow()==-1 else table.currentRow()+1
         table.insertRow(row)
         self.__updateRows(table)
-        
+
         #Setting selection
         table.setCurrentCell(row, 0)
-        for r,s in[(row-1, False), (row, True)]: 
+        for r,s in[(row-1, False), (row, True)]:
             for col in range(table.columnCount()):
                 item = table.item(r, col)
                 if not item: table.setItem(r, col, QtGui.QTableWidgetItem(''))
                 table.item(r,col).setSelected(s)
-    
+
     def __removeRow(self, table):
         '''Removes row.'''
         if table.rowCount()==1:
@@ -208,7 +207,7 @@ class PyTernary(QtGui.QMainWindow):
         item = table.item(row, table.currentRow())
         table.removeRow(row)
         self.__updateRows(table)
-        
+
         #Setting selection
         if row==table.rowCount(): row -= 1
         table.setCurrentCell(row, 0)
@@ -216,24 +215,24 @@ class PyTernary(QtGui.QMainWindow):
             item = table.item(row, col)
             if not item: table.setItem(row, col, QtGui.QTableWidgetItem(''))
             table.item(row,col).setSelected(True)
-        
+
     def __clearRow(self, table, row):
         '''Clears row.'''
         for col in range(3):
             table.setItem(row, col, QtGui.QTableWidgetItem(''))
-    
+
     def __updateRows(self, table):
         '''Updates rows.'''
         table.setVerticalHeaderLabels(['%02i' % (i+1) for i in range(table.rowCount())])
         for i in range(table.rowCount()):
             table.setRowHeight(i, 20)
-    
+
     def __changeHorizontalHeader(self, index):
         '''Changes horizontal header.'''
         table = self.groups[0][0]
         oldHeader = table.horizontalHeaderItem(index).text()
-        newHeader, ok = QtGui.QInputDialog.getText(self, 
-                                                   'Change Header Label', 'Header:', 
+        newHeader, ok = QtGui.QInputDialog.getText(self,
+                                                   'Change Header Label', 'Header:',
                                                    QtGui.QLineEdit.Normal, oldHeader)
         if ok:
             self.shortTitles[index] = newHeader
@@ -241,12 +240,12 @@ class PyTernary(QtGui.QMainWindow):
             self.canvas.draw()
             for table in [t[0] for t in self.groups]:
                 table.horizontalHeaderItem(index).setText(newHeader)
-                
+
     def __cellTableChanged(self, table, row, col, index):
         '''Connection to cell table change.'''
         text = table.item(row, col).text()
-        
-        try:        
+
+        try:
             if str(float(text)) != text:
                 raise ValueError
         except:
@@ -256,7 +255,7 @@ class PyTernary(QtGui.QMainWindow):
                 text = ''
             table.item(row, col).setText(text)
             return
-                
+
         line = []
         for i in range(3):
             item = table.item(row, i)
@@ -290,7 +289,7 @@ class PyTernary(QtGui.QMainWindow):
     def __getGroupData(self, index):
         '''Gets group data as a matrix (type: list).'''
         data = []
-        table = self.groups[index][0]        
+        table = self.groups[index][0]
         for row in range(table.rowCount()):
             try:
                 line = [float(table.item(row, col).text()) for col in range(3)]
@@ -298,7 +297,7 @@ class PyTernary(QtGui.QMainWindow):
                 continue
             data.append(line)
         return data
-                
+
     def __importData2Table(self, table, index):
         '''Imports data to table.'''
         fname = QtGui.QFileDialog.getOpenFileName(self, 'Open file','./Teste', '*'+self.FORMATFILE)
@@ -308,7 +307,7 @@ class PyTernary(QtGui.QMainWindow):
         lines_error = []
         for nline, line in enumerate(open(str(fname.toUtf8()),'r').readlines()):
             line = line.strip()
-            if line and line[0] != '#': 
+            if line and line[0] != '#':
                 row = line.split('\t')
                 if len(row)<3:
                     row = line.split()
@@ -321,9 +320,9 @@ class PyTernary(QtGui.QMainWindow):
                         self.__cellTableChanged(table, nrow, col, index)
                 else:
                     lines_error.append(str(nline+1))
-                    
+
         self.__updateRows(table)
-        
+
         #Warning Message
         if lines_error:
             wm = QtGui.QMessageBox(self)
@@ -333,23 +332,23 @@ class PyTernary(QtGui.QMainWindow):
                 lines_error = lines_error[:5]+['...']
             wm.setText(msg % ', '.join(lines_error))
             wm.show()
-                        
+
     def __exportData2File(self, table):
         '''Exports datat to file.'''
         fname = QtGui.QFileDialog.getSaveFileName(self, 'Save file','./Teste', '*'+ self.FORMATFILE)
         if not fname: return
         if not fname.endsWith(self.FORMATFILE):
-            fname += self.FORMATFILE 
+            fname += self.FORMATFILE
         f = open(str(fname.toUtf8()), 'w')
         f.write('#%s\t%s\t%s\n' % tuple([t.text() for t in self.shortTitles]))
         for row in range(table.rowCount()):
             for col in range(3):
-                item = table.item(row, col) 
+                item = table.item(row, col)
                 f.write('%s\t' % (item.text() if item and item.text() else '_'))
             f.write('\n')
         f.close()
-    
-    
+
+
 ###############################################################################
 class QGroupTable(QtGui.QTableWidget):
     def __init__(self, parent, shortTitle):
@@ -426,12 +425,12 @@ class QGroupTable(QtGui.QTableWidget):
         self.groups_brief.append('')
         self.TernaryPlot.add_null_plot(label=groupName)
 
-        
+
 ###############################################################################
-  
+
 class PlotSettingsWindow(QtGui.QDialog):
     def __init__(self, parent, TernaryPlot, canvas):
-        '''Constructor. 
+        '''Constructor.
         plots: plot data
         canvas: canvas to plot
         '''
@@ -443,7 +442,7 @@ class PlotSettingsWindow(QtGui.QDialog):
         self.markers = ['.', ',', 'o', 'v', '^', '<', '>', '1', '2', '3', '4',
                         's', 'p', '*', 'h', 'H', '+', 'x', 'D', 'd', '|', '_']
         self.create_main_frame()
-        
+
     def create_main_frame(self):
         #Tab Box
         tabBox = QtGui.QTabWidget()
@@ -468,11 +467,11 @@ class PlotSettingsWindow(QtGui.QDialog):
         self.setLayout(mbox)
         self.setGeometry(QtCore.QRect(10, 50, 500, 350))
 
-    def __connect(self, dic, key, value):
+    def __connect(self, row, dic, key, value):
         '''Connects the value to a dictionary.'''
         dic[key] = value
-        self.canvas.draw()
-    
+        self.TernaryPlot.change_properties(row, **dic)
+
     def __addElementsTable(self):
         '''Adds elements table.'''
         self.frmColor = []
@@ -489,7 +488,8 @@ class PlotSettingsWindow(QtGui.QDialog):
         if col == 0:
             newGroupName = self.elements_table.item(row, col).text()
             if newGroupName:
-                self.TernaryPlot.change_properties(row, label = newGroupName)
+                self.TernaryPlot.set_legend(row, newGroupName)
+                self.TernaryPlot.change_properties(row, label=newGroupName)
                 self.parent.tab.setItemText(row, newGroupName)
 
     def __changeCheckBoxesColumn(self, index):
@@ -500,17 +500,18 @@ class PlotSettingsWindow(QtGui.QDialog):
                 self.chkBoxPlot[i].setCheckState(QtCore.Qt.Checked if chkValue else QtCore.Qt.Unchecked)
         if index == 5:
             for i in range(self.TernaryPlot.get_n()):
-                chkValue = not self.TernaryPlot.get_legend_visibiliy(i)
+                chkValue = not self.TernaryPlot.get_legend_visibility(i)
                 self.TernaryPlot.set_legend_visibility(i, chkValue)
                 self.chkBoxLegend[i].setCheckState(QtCore.Qt.Checked if chkValue else QtCore.Qt.Unchecked)
-        
+
     def __setCellColor(self, row, col):
         if col==1:
             color = QtGui.QColorDialog.getColor()
             if color.isValid():
-                self.TernaryPlot.change_properties(row, color=color.name())
+                print str(color.name())
                 self.frmColor[row].setStyleSheet("QWidget {background-color: %s}" % color.name())
-       
+                self.TernaryPlot.change_properties(row, color=str(color.name()))#color.name())
+
     def __addRow2ElementsTable(self, row):
         '''Adds row to elements table.'''
         table = self.elements_table
@@ -526,14 +527,14 @@ class PlotSettingsWindow(QtGui.QDialog):
         self.frmColor.append(QtGui.QFrame())
         self.frmColor[-1].setStyleSheet("QWidget {background-color: %s}" % color.name())
         table.setCellWidget(row, 1, self.frmColor[-1])
-#        table.cellClicked.connect(lambda x,y: self.setCellColor(x, y, frm))
-        
+        # table.cellClicked.connect(lambda x,y: self.setCellColor(x, y, frm))
+
         #Marker
         comboBox = QtGui.QComboBox()
         comboBox.addItems(self.markers)
         marker = self.TernaryPlot.get_properties(row)
         comboBox.setCurrentIndex(self.markers.index(marker['marker']))
-        comboBox.currentIndexChanged.connect(lambda x:self.__connect(marker,'marker', self.markers[x]))
+        comboBox.currentIndexChanged.connect(lambda x:self.__connect(row, marker,'marker', self.markers[x]))
         table.setCellWidget(row, 2, comboBox)
 
         #Marker size
@@ -542,15 +543,20 @@ class PlotSettingsWindow(QtGui.QDialog):
         sbox.setValue(d_markersize['markersize'])
         sbox.setMinimum(1)
         sbox.setMaximum(30)
-        sbox.valueChanged.connect(lambda x:self.__connect(d_markersize, 'markersize', x))
+        sbox.valueChanged.connect(lambda x:self.__connect(row, d_markersize, 'markersize', x))
         table.setCellWidget(row, 3, sbox)
-                
+
+        def checkbox_plot(visible, row):
+            self.TernaryPlot.set_plot_visibility(row, visible)
+
+            if (not visible):
+                self.chkBoxLegend[row].setCheckState(QtCore.Qt.Unchecked)
         #Plot
         chkValue = self.TernaryPlot.get_plot_visibility(row)
         frame = QtGui.QFrame()
         chkBoxPlot = QtGui.QCheckBox('')
         chkBoxPlot.setCheckState(QtCore.Qt.Checked if chkValue else QtCore.Qt.Unchecked)
-        chkBoxPlot.clicked.connect(lambda x: self.TernaryPlot.set_plot_visibility(row, x))
+        chkBoxPlot.clicked.connect(lambda x: checkbox_plot(x, row))
         self.chkBoxPlot.append(chkBoxPlot)
         hbox = QtGui.QHBoxLayout()
         hbox.addStretch(1)
@@ -559,7 +565,7 @@ class PlotSettingsWindow(QtGui.QDialog):
         hbox.setMargin(2)
         frame.setLayout(hbox)
         table.setCellWidget(row, 4, frame)
-        
+
         #Legend
         frame = QtGui.QFrame()
         chkValue = self.TernaryPlot.get_legend_visibility(row)
@@ -573,19 +579,19 @@ class PlotSettingsWindow(QtGui.QDialog):
         hbox.addStretch(1)
         hbox.setMargin(2)
         frame.setLayout(hbox)
-        table.setCellWidget(row, 5, frame)            
-          
+        table.setCellWidget(row, 5, frame)
+
 if __name__=='__main__':
     app = QtGui.QApplication(sys.argv)
     main = PyTernary()
     main.show()
     sys.exit(app.exec_())
-    
-    
-    
-    
-    
-    
-    
-    
-    
+
+
+
+
+
+
+
+
+

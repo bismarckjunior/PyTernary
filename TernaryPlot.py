@@ -51,19 +51,19 @@ class TernaryAxis():
         self.ax = ax = fig.add_subplot(111, aspect='equal')
         ax.set_xticks(())
         ax.set_yticks(())
-        ax.set_frame_on(False) 
+        ax.set_frame_on(False)
         self.text = ax.text
         self.plots = {'ticks':[], 'ticks_label':[], 'grids':[], 'label':[], 'inverse':[]}
         self.set_ticks()
-    
+
     def cla(self):
         '''Clears axis.'''
         self.remove('ticks')
         self.remove('ticks_label')
         self.remove('label')
-        self.remove('grids') 
+        self.remove('grids')
         self.remove('inverse')
-    
+
     def remove(self, plot):
         '''Removes the plot. plot=[ticks, labels, grids, label].'''
         if plot in self.plots and self.plots[plot]:
@@ -77,31 +77,31 @@ class TernaryAxis():
             return True
         else:
             return False
-    
+
     def set_label(self, text, **kw):
         '''Sets the axis label.'''
-        self.remove('label')   
+        self.remove('label')
         xy = (np.array(self.beg)+np.array(self.end))/2.+np.array(self.transform_label)
         if self.label_rotation:
             self.plots['label'] = [self.text(xy[0],xy[1], text, ha='center', va='center', rotation=self.label_rotation, **kw)]
         else:
             self.plots['label'] = [self.text(xy[0],xy[1], text, ha='center', va='top', **kw)]
-    
+
     def get_label(self):
         '''Gets the label.'''
-        return self.plots['label'][0].get_text() if self.plots['label'] else ''        
-        
+        return self.plots['label'][0].get_text() if self.plots['label'] else ''
+
     def set_ticks(self, ticks=10, llen_ticks=0.01, lw_ticks=1.2):
-        '''Sets ticks. 
+        '''Sets ticks.
         ticks: list or integer
         llen_ticks: line lenght
         lw_ticks: line width
-        ''' 
+        '''
         self.ticks = []
         self.labels = []
-        try:  
+        try:
             ticks = [i/ticks for i in range(ticks+1)]
-        except: 
+        except:
             ticks = list(ticks)
             ticks.sort()
         for tick in ticks:
@@ -111,7 +111,7 @@ class TernaryAxis():
         self.llen_ticks=llen_ticks
         self.lw_ticks = lw_ticks
         self.update()
-   
+
     def grid(self, toggle=None, grid_ticks=None, **kw):
         '''Removes or plots the grids.'''
         #Removing grids
@@ -129,7 +129,7 @@ class TernaryAxis():
                 x2,y2 = self.__boundary_point(tick)
                 plt_grid = self.ax.plot([x1,x2],[y1,y2], **kw)
                 self.plots['grids'].append(plt_grid)
-    
+
     def remove_ticks_label(self):
         '''Removes ticks label.'''
         self.remove('ticks_label')
@@ -149,7 +149,7 @@ class TernaryAxis():
             else:
                 self.plots['label'] = [self.text(xy[0],xy[1], text, ha='center', va='top')]
             self.plots['label'][0].set_font_properties(fp)
-        
+
     def __inverse(self):
         '''Changes the tick angle.'''
         self.inverseOn = not self.inverseOn
@@ -159,52 +159,52 @@ class TernaryAxis():
             self.phi_tick = 0 if self.inverseOn else -np.pi/3
         else:
             self.phi_tick = 2*np.pi/3 if self.inverseOn else np.pi/3
-                    
+
     def inverse(self):
         '''Inverse the axis.'''
         self.__inverse()
         self.update()
-    
+
     def plot_inverse_ticks(self):
         '''Plots the invese ticks.'''
         self.__inverse()
         self.__plot_ticks()
         self.__inverse()
-                
+
     def update(self):
         '''Updates the graph.'''
         self.remove('ticks')
         self.remove('ticks_label')
-        self.remove('grids') 
+        self.remove('grids')
         self.__plot_ticks()
         self.__plot_ticks_label()
-        if self.gridOn: self.grid(True)        
-   
+        if self.gridOn: self.grid(True)
+
     def __rect(self, r, phi):
         '''From polar coordinates to rectangle coordinates.'''
         return (r*np.cos(phi), r*np.sin(phi))
-    
+
     def __plot_ticks(self):
         '''Plots the ticks. llen_ticks: line lenght. lw_ticks: line width'''
         for tick in self.ticks:
-            if tick not in [(0,0),(1,0)] and (tick[0]!=0.5 or tick[1]==0): 
+            if tick not in [(0,0),(1,0)] and (tick[0]!=0.5 or tick[1]==0):
                 x1,y1 = tuple(tick)
-                x2,y2 = tuple(np.array(tick)+np.array(self.__rect(self.llen_ticks, self.phi_tick))) 
+                x2,y2 = tuple(np.array(tick)+np.array(self.__rect(self.llen_ticks, self.phi_tick)))
                 plt_tick = self.ax.plot([x1,x2], [y1,y2], 'k-', lw=self.lw_ticks)
                 self.plots['ticks'].append(plt_tick)
-    
+
     def __plot_ticks_label(self):
         '''Plots the ticks label.'''
         for tick, label in zip(self.ticks, self.labels[::1-2*int(self.inverseOn)]):
             if not self.min_max:
                 if tick in [(0,0),(1,0)] or tick[0]==0.5 and tick[1]!=0:
-                    continue 
+                    continue
             xy_label = np.array(tick)+np.array(self.transform_tick_label)
             if self.percentage: label = '%g%%' % (label*100)
             plt_labels = self.text(xy_label[0], xy_label[1], label, ha=self.ha_tick_label, fontsize=11)
-            
+
             self.plots['ticks_label'].append(plt_labels)
-             
+
     def __boundary_point(self, xy):
         '''Finds the triangle boundary.'''
         x, y = tuple(xy)
@@ -228,7 +228,7 @@ class TernaryAxis():
 
         for a,b in [(x1,y1),(x2,y2),(x3,y3)]:
             if not (abs(a-x)<1E-3 and abs(b-y)<1E-3 ) and 0<=a<=1 and 0<=b<=1:
-                return (a, b)                
+                return (a, b)
         return (a, b)
 
 
@@ -291,30 +291,50 @@ class TernaryPlot():
             return self.plots[index][0].get_visible()
         else:
             return False
-    
+
     def get_legend_visibility(self, index):
         '''Gets bool for legend visibility.'''
         return self.legends_visible[index]
-    
+
+    def set_legend(self, index, label):
+        '''Sets legend text.'''
+        self.legends_labels[index] = label
+        plt.setp(self.plots[index], label=label)
+
+        self.set_legend_visibility(index, self.get_legend_visibility(index))
+
     def set_legend_visibility(self, index, toggle):
         '''Sets legend visibility.'''
-        if self.get_plot_visibility(index):
-            self.legends_visible[index] = bool(toggle)
+        self.legends_visible[index] = bool(toggle)
+
+        legends = self.legends_labels[:]
+
+        for i in range(len(legends)):
+            if (self.legends_visible[i] == False):
+                legends[i] = ''
+
+        if (legends.count('') == len(legends)):
+            try:
+                self.legends.remove()
+            except:
+                pass
+        else:
+            self.legend(legends)
+
+        self.draw()
 
     def set_plot_visibility(self, index, toggle):
         '''Sets plot visibility.'''
         if not self.plots[index]:
             return
-        self.plots[index][0].set_visible(bool(toggle))
-            
-        if self.legends_visible[index]:
-            if toggle:
-                self.legends_labels[index] = self.plots[index][0].properties()['label']
-            else:
-                self.legends_labels[index] = ''
-            self.legend()
+
+        if (not toggle):
+            self.set_legend_visibility(index, toggle)
+
+        plt.setp(self.plots[index], visible=toggle)
         self.draw()
-        
+        return True
+
     def get_n(self):
         '''Gets the number of plots.'''
         return len(self.plots)
@@ -326,19 +346,22 @@ class TernaryPlot():
             self.colors = self.properties.pop(index)['color'] + self.colors
             self.legends_labels.pop(index)
             self.legends_visible.pop(index)
-        
-        
+
+
     def get_properties(self, index, key=None):
         '''Gets plot properties.'''
         if key:
             return self.properties[index][key]
         else:
             return self.properties[index]
-    
+
     def change_properties(self, index, **kw):
         '''Changes properties plot.'''
         for key in kw:
             self.properties[index][key] = kw[key]
+
+        plt.setp(self.plots[index], **kw)
+        self.draw()
 
     def get_color(self):
         '''Gets the next color.'''
@@ -449,7 +472,7 @@ class TernaryPlot():
         else:
             labels = self.legends_labels
         n = len(labels) if len(labels) < 13 else 13
-        
+
         lines, labels_ = [], []
         for line, label, b in zip(self.plots, labels, self.legends_visible):
             if line and label and b:
@@ -506,17 +529,17 @@ class TernaryPlot():
         return template
 
     def plot_template(self, data, kind='linear', **kw):
-        '''Plots the template using linear or cubic interpolation and return 
-        index.''' 
+        '''Plots the template using linear or cubic interpolation and return
+        index.'''
         template = self.__plot_template(data, kind, **kw)
         self.plots.append(template)
         index = len(self.plots)-1
         return index
-        
+
     def get_main_labels(self):
         '''Gets main labels.'''
         return [ax.get_label() for ax in self.axes]
-        
+
     def show_min_max(self, toggle=None):
         '''Toggles between showing the minimum and maximum values or not.'''
         self.min_maxOn = toggle if toggle else not self.min_maxOn
@@ -526,7 +549,7 @@ class TernaryPlot():
         if self.short_labels:
             fs = self.short_labels_plot[0].get_fontsize()
             self.set_short_labels(self.short_labels, d=0.98, fontsize=fs)
-            
+
     def clear_plot(self, index = None):
         '''Clears the plot.'''
         if index:
@@ -538,42 +561,42 @@ class TernaryPlot():
         else:
             #Clearing figure
             self.fig.clf()
-            
+
             #Clearing axes
             ax = self.fig.add_subplot(111, aspect='equal')
             ax.set_ylim(-0.01, 0.92)
             ax.set_xlim(-0, 1.01)
             self.d_title = lambda d: ax.set_ylim(-0.01, d)
-            
+
             #Creating background
-            p = patches.Polygon([(0,0),(0.5,0.5*np.sqrt(3)),(1,0),(0,0)], 
+            p = patches.Polygon([(0,0),(0.5,0.5*np.sqrt(3)),(1,0),(0,0)],
                                  facecolor="white",edgecolor="black", lw=1.)
             ax.add_patch(p)
-            
+
             #Setting main axis
             self.__ax = ax
             self.ax = self.fig.add_subplot(111, aspect='equal')
-            
+
             #Creating axes
-            self.__create_axes()  
-    
+            self.__create_axes()
+
     def show(self):
         '''Shows the graphic.'''
-        self.canvas.show()    
-    
+        self.fig.show()
+
     def draw(self):
         '''Draws the graphic.'''
-        self.canvas.draw()
-        
+        self.fig.canvas.draw()
+
     def __create_axes(self):
         '''Creates the axes.'''
         self.axRight = TernaryAxis(self.fig, 'right')
         self.axLeft = TernaryAxis(self.fig, 'left')
         self.axBottom = TernaryAxis(self.fig, 'bottom')
         self.axes = [self.axRight, self.axLeft, self.axBottom]
-        
+
 if __name__=='__main__':
-    fig = plt.figure()       
+    fig = plt.figure()
     T = TernaryPlot(fig, 'Ternary Plot', ['Big A', 'Big B', 'Big C'], ['A','B','C'])
 
     data = [ [10,20,70], [20,25,55], [0.5,0.2,0.3]]
@@ -582,11 +605,18 @@ if __name__=='__main__':
     T.plot_template(data+[[40,50,10]],'fill', hatch='/', fill=False, edgecolor='k', color='c')
     #T.legend()
     T.legend(['Sample 1', 'Sample 2'])
-    T.set_plot_visibility(1, 0)
-    T.set_plot_visibility(1,1)
-    #TP.inverse()
-    #TP.update_plot(1, [[]], color='k', markersize=10, marker='o')
-    
-    T.show()
+    T.set_plot_visibility(1, False)
+    T.change_properties(0, markersize=12)
+    #T.inverse()
 
-    
+    # T.show()
+    T.set_plot_visibility(1, True)
+    T.set_legend_visibility(1, False)
+    T.set_legend_visibility(0, False)
+    T.legend(['',''])
+    # T.draw()
+    plt.show()
+
+    # import time
+    # time.sleep(10)
+
